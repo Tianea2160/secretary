@@ -6,6 +6,7 @@ spring-ai = "1.1.6"
 kotlinx-coroutines = "1.11.0-rc02"
 kotlinx-serialization = "1.8.1"
 koog = "0.8.0"
+spring-shell = "4.0.2"
 
 [libraries]
 # BOMs
@@ -33,6 +34,9 @@ kotlinx-coroutines-core-jvm = { module = "org.jetbrains.kotlinx:kotlinx-coroutin
 
 # JUnit (version managed by spring-boot-dependencies)
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+
+# Spring Shell (TUI)
+spring-shell-starter = { module = "org.springframework.shell:spring-shell-starter", version.ref = "spring-shell" }
 
 [plugins]
 org-springframework-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }

@@ -26,6 +26,9 @@ repositories {
 extra["kotlin-serialization.version"] =
     libs.versions.kotlinx.serialization
         .get()
+extra["kotlin-coroutines.version"] =
+    libs.versions.kotlinx.coroutines
+        .get()
 
 dependencies {
     implementation(platform(libs.spring.ai.bom))
@@ -37,6 +40,7 @@ dependencies {
     implementation(libs.koog.agents)
     implementation(libs.koog.spring.ai.starter.model.chat)
     implementation(libs.spring.ai.starter.model.google.genai)
+    implementation(libs.spring.shell.starter)
 
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.core.jvm)
