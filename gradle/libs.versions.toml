@@ -21,10 +21,14 @@ kotlin-test-junit5 = { module = "org.jetbrains.kotlin:kotlin-test-junit5" }
 
 koog-agents = { module = "ai.koog:koog-agents", version.ref = "koog" }
 koog-spring-ai-starter-model-chat = { module = "ai.koog:koog-spring-ai-starter-model-chat", version.ref = "koog" }
+koog-spring-ai-starter-model-embedding = { module = "ai.koog:koog-spring-ai-starter-model-embedding", version.ref = "koog" }
 koog-spring-ai-starter-chat-memory = { module = "ai.koog:koog-spring-ai-starter-chat-memory", version.ref = "koog" }
+koog-spring-ai-starter-vector-store = { module = "ai.koog:koog-spring-ai-starter-vector-store", version.ref = "koog" }
 
 spring-ai-starter-model-google-genai = { module = "org.springframework.ai:spring-ai-starter-model-google-genai" }
+spring-ai-starter-model-ollama = { module = "org.springframework.ai:spring-ai-starter-model-ollama" }
 spring-ai-starter-chat-memory-jdbc = { module = "org.springframework.ai:spring-ai-starter-model-chat-memory-repository-jdbc" }
+spring-ai-starter-vector-store-pgvector = { module = "org.springframework.ai:spring-ai-starter-vector-store-pgvector" }
 
 spring-boot-starter-jdbc = { module = "org.springframework.boot:spring-boot-starter-jdbc" }
 postgresql = { module = "org.postgresql:postgresql" }

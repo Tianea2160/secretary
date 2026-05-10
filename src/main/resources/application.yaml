@@ -3,6 +3,7 @@ spring:
     name: secretary
   main:
     banner-mode: off
+    web-application-type: none
   shell:
     interactive:
       enabled: true
@@ -11,21 +12,41 @@ spring:
     username: secretary
     password: secretary
   ai:
+    model:
+      chat: google-genai
+      embedding: ollama
     google:
       genai:
         api-key: ${GOOGLE_API_KEY}
         chat:
           options:
             model: gemini-2.0-flash
+    ollama:
+      base-url: http://localhost:11434
+      embedding:
+        options:
+          model: qwen3-embedding:8b
+      init:
+        pull-model-strategy: when_missing
+        timeout: 10m
+        max-retries: 1
     chat:
       memory:
         repository:
           jdbc:
             initialize-schema: always
+    vectorstore:
+      pgvector:
+        initialize-schema: true
+        index-type: NONE
+        distance-type: COSINE_DISTANCE
+        dimensions: 4096
 secretary:
   chat:
     memory:
       window-size: 20
+    long-term-memory:
+      top-k: 5
 logging:
   level:
     root: info
