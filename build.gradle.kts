@@ -20,9 +20,6 @@ repositories {
     mavenCentral()
 }
 
-// Override Spring Boot's pinned kotlinx.serialization version to match what Koog 0.8.0 was compiled against.
-// Without this, Spring DM downgrades serialization-core to 1.6.3 while Koog ships serialization-json-io 1.8.1,
-// causing AbstractMethodError at runtime.
 extra["kotlin-serialization.version"] =
     libs.versions.kotlinx.serialization
         .get()
@@ -69,4 +66,14 @@ kotlin {
 tasks.withType<Test> {
     useJUnitPlatform()
     maxParallelForks = 4
+}
+
+tasks.bootJar {
+    manifest {
+        attributes["Enable-Native-Access"] = "ALL-UNNAMED"
+    }
+}
+
+tasks.bootRun {
+    jvmArgs("--enable-native-access=ALL-UNNAMED")
 }
