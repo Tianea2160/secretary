@@ -1,4 +1,4 @@
-package org.tianea.secretary.shell
+package org.tianea.secretary.shell.runner
 
 import ai.koog.agents.core.agent.AIAgent
 import kotlinx.coroutines.reactor.mono
@@ -16,6 +16,10 @@ import org.springframework.shell.jline.tui.component.view.control.GridView
 import org.springframework.shell.jline.tui.component.view.control.ListView
 import org.springframework.shell.jline.tui.component.view.control.ViewDoneEvent
 import org.springframework.stereotype.Component
+import org.tianea.secretary.core.session.SessionState
+import org.tianea.secretary.core.session.SlashCommand
+import org.tianea.secretary.core.session.SlashCommandCatalog
+import org.tianea.secretary.shell.view.WideCharInputView
 import reactor.core.Disposable
 import reactor.core.scheduler.Schedulers
 import kotlin.system.exitProcess

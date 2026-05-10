@@ -1,4 +1,4 @@
-package org.tianea.secretary.shell
+package org.tianea.secretary.core.session
 
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.queryForList

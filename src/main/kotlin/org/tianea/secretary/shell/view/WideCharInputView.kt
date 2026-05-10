@@ -1,4 +1,4 @@
-package org.tianea.secretary.shell
+package org.tianea.secretary.shell.view
 
 import org.jline.utils.AttributedString
 import org.slf4j.LoggerFactory

@@ -1,4 +1,4 @@
-package org.tianea.secretary.shell
+package org.tianea.secretary.core.session
 
 import org.springframework.stereotype.Service
 

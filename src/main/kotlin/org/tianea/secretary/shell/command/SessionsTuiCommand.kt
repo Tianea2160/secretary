@@ -1,4 +1,4 @@
-package org.tianea.secretary.shell
+package org.tianea.secretary.shell.command
 
 import org.springframework.shell.core.command.annotation.Command
 import org.springframework.shell.jline.tui.component.message.ShellMessageBuilder
@@ -6,6 +6,8 @@ import org.springframework.shell.jline.tui.component.view.TerminalUIBuilder
 import org.springframework.shell.jline.tui.component.view.control.ListView
 import org.springframework.shell.jline.tui.component.view.event.KeyEvent
 import org.springframework.stereotype.Component
+import org.tianea.secretary.core.session.SessionRepository
+import org.tianea.secretary.core.session.SessionState
 import java.io.PrintWriter
 import java.io.StringWriter
 

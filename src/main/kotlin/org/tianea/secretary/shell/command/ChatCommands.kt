@@ -1,4 +1,4 @@
-package org.tianea.secretary.shell
+package org.tianea.secretary.shell.command
 
 import ai.koog.agents.core.agent.AIAgent
 import kotlinx.coroutines.runBlocking
@@ -6,6 +6,8 @@ import org.springframework.shell.core.command.annotation.Arguments
 import org.springframework.shell.core.command.annotation.Command
 import org.springframework.shell.core.command.annotation.Option
 import org.springframework.stereotype.Component
+import org.tianea.secretary.core.session.SessionService
+import org.tianea.secretary.core.session.SessionState
 
 @Component
 class ChatCommands(
