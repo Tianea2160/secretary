@@ -2,6 +2,37 @@
 kotlin = "2.3.21"
 spring-boot = "3.5.13"
 dependency-management = "1.1.7"
+spring-ai = "1.1.6"
+kotlinx-coroutines = "1.11.0-rc02"
+kotlinx-serialization = "1.8.1"
+koog = "0.8.0"
+
+[libraries]
+# BOMs
+spring-ai-bom = { module = "org.springframework.ai:spring-ai-bom", version.ref = "spring-ai" }
+kotlinx-coroutines-bom = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-bom", version.ref = "kotlinx-coroutines" }
+
+# Spring Boot (version managed by spring-boot-dependencies BOM)
+spring-boot-starter = { module = "org.springframework.boot:spring-boot-starter" }
+spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
+
+# Kotlin (version managed by kotlin-bom)
+kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect" }
+kotlin-test-junit5 = { module = "org.jetbrains.kotlin:kotlin-test-junit5" }
+
+# Koog (no BOM available)
+koog-agents = { module = "ai.koog:koog-agents", version.ref = "koog" }
+koog-spring-ai-starter-model-chat = { module = "ai.koog:koog-spring-ai-starter-model-chat", version.ref = "koog" }
+
+# Spring AI (version managed by spring-ai-bom)
+spring-ai-starter-model-google-genai = { module = "org.springframework.ai:spring-ai-starter-model-google-genai" }
+
+# Coroutines (version managed by kotlinx-coroutines-bom / spring-boot-dependencies)
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core" }
+kotlinx-coroutines-core-jvm = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm" }
+
+# JUnit (version managed by spring-boot-dependencies)
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
 
 [plugins]
 org-springframework-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
