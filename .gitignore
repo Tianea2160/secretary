@@ -40,3 +40,7 @@ out/
 .kotlin
 .java-version
 .env
+
+### Logs ###
+logs/
+*.log

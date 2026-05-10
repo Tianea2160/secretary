@@ -24,7 +24,8 @@ private fun loadDotenvIntoSystemProperties(file: File = File(".env")) {
             if (idx <= 0) return@forEach
             val key = line.substring(0, idx).trim()
             val value =
-                line.substring(idx + 1)
+                line
+                    .substring(idx + 1)
                     .trim()
                     .removeSurrounding("\"")
                     .removeSurrounding("'")
