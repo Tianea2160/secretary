@@ -6,6 +6,10 @@ spring:
   shell:
     interactive:
       enabled: true
+  datasource:
+    url: jdbc:postgresql://localhost:5435/secretary
+    username: secretary
+    password: secretary
   ai:
     google:
       genai:
@@ -13,6 +17,15 @@ spring:
         chat:
           options:
             model: gemini-2.0-flash
+    chat:
+      memory:
+        repository:
+          jdbc:
+            initialize-schema: always
+secretary:
+  chat:
+    memory:
+      window-size: 20
 logging:
   level:
     root: info
