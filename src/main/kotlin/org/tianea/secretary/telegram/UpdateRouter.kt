@@ -1,8 +1,6 @@
 package org.tianea.secretary.telegram
 
-import ai.koog.agents.core.agent.AIAgent
 import jakarta.annotation.PreDestroy
-import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.stereotype.Component
@@ -10,6 +8,7 @@ import org.telegram.telegrambots.longpolling.util.LongPollingSingleThreadUpdateC
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.generics.TelegramClient
+import org.tianea.secretary.core.agent.AssistantRunner
 import org.tianea.secretary.core.session.SessionService
 import org.tianea.secretary.core.session.SlashCommandCatalog
 import java.util.concurrent.ExecutorService
@@ -28,7 +27,7 @@ import java.util.concurrent.TimeUnit
 class UpdateRouter(
     private val sessionService: SessionService,
     private val slashCatalog: SlashCommandCatalog,
-    private val agent: AIAgent<String, String>,
+    private val assistantRunner: AssistantRunner,
     private val telegramClient: TelegramClient,
     private val props: TelegramProperties,
 ) : LongPollingSingleThreadUpdateConsumer {
@@ -62,7 +61,7 @@ class UpdateRouter(
                 slashCatalog.execute(text, chatId).messages
             } else {
                 val sessionId = sessionService.currentOrNew(chatId)
-                listOf(runBlocking { agent.run(text, sessionId) })
+                listOf(assistantRunner.run(chatId, sessionId, text))
             }
         replies.forEach { send(chatId, it) }
     }

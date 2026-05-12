@@ -2,6 +2,7 @@ plugins {
     `version-catalog`
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.spring)
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.org.springframework.boot)
     alias(libs.plugins.io.spring.dependency.management)
     alias(libs.plugins.ktlint.gradle)
@@ -47,6 +48,7 @@ dependencies {
     implementation(libs.telegrambots.springboot.longpolling.starter)
     implementation(libs.telegrambots.client)
     implementation(libs.spring.boot.starter.jdbc)
+    implementation(libs.spring.boot.starter.quartz)
     implementation(libs.hypersistence.tsid)
     runtimeOnly(libs.postgresql)
 
