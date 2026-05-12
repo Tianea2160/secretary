@@ -65,6 +65,7 @@ kotlin {
 }
 
 val enableNativeAccess = "--enable-native-access=ALL-UNNAMED"
+val maxRamPercentage = "-XX:MaxRAMPercentage=60.0"
 
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
