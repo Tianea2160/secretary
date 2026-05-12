@@ -70,11 +70,10 @@ val maxRamPercentage = "-XX:MaxRAMPercentage=60.0"
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
     maxParallelForks = 4
-    jvmArgs(enableNativeAccess)
 }
 
 tasks.withType<JavaExec>().configureEach {
-    jvmArgs(enableNativeAccess)
+    jvmArgs(enableNativeAccess, maxRamPercentage)
 }
 
 tasks.bootJar {
