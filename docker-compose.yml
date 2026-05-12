@@ -122,7 +122,7 @@ services:
       start_period: 10s
 
   redis:
-    image: docker.io/redis:7
+    image: docker.io/redis:8
     container_name: secretary-redis
     restart: always
     command: >
