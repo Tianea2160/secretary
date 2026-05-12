@@ -4,10 +4,6 @@ spring:
   main:
     banner-mode: off
     web-application-type: none
-  # Spring Shell의 InteractiveShellRunner는 default로 활성. ChatTuiRunner를
-  # @Order(HIGHEST_PRECEDENCE)로 먼저 실행하고 종료 시 System.exit(0)으로 후속
-  # ShellRunner들이 실행되지 못하게 막는다. ShellRunnerAutoConfiguration 자체는
-  # 일반 @Configuration이라 spring.autoconfigure.exclude로 비활성화 불가.
   datasource:
     url: jdbc:postgresql://localhost:5435/secretary
     username: secretary
@@ -48,10 +44,11 @@ secretary:
       window-size: 20
     long-term-memory:
       top-k: 5
+telegram:
+  bot-token: ${TELEGRAM_BOT_TOKEN:}
+  allowed-chat-ids: ${TELEGRAM_ALLOWED_CHAT_IDS:}
 logging:
   file:
-    # 풀스크린 TUI 모드에서는 콘솔 로그가 alternate screen에 가려져 안 보이므로
-    # 디버깅은 별도 터미널에서 `tail -f logs/secretary.log`로 진행한다.
     name: logs/secretary.log
   level:
     root: info

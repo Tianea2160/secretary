@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.spring)
     alias(libs.plugins.org.springframework.boot)
     alias(libs.plugins.io.spring.dependency.management)
+    alias(libs.plugins.ktlint.gradle)
 }
 
 group = "org.tianea"
@@ -43,8 +44,8 @@ dependencies {
     implementation(libs.spring.ai.starter.model.ollama)
     implementation(libs.spring.ai.starter.chat.memory.jdbc)
     implementation(libs.spring.ai.starter.vector.store.pgvector)
-    implementation(libs.spring.shell.starter)
-    implementation(libs.spring.shell.starter.ffm)
+    implementation(libs.telegrambots.springboot.longpolling.starter)
+    implementation(libs.telegrambots.client)
     implementation(libs.spring.boot.starter.jdbc)
     implementation(libs.hypersistence.tsid)
     runtimeOnly(libs.postgresql)
@@ -66,6 +67,7 @@ kotlin {
 tasks.withType<Test> {
     useJUnitPlatform()
     maxParallelForks = 4
+    jvmArgs = jvmArgs + "--enable-native-access=ALL-UNNAMED"
 }
 
 tasks.bootJar {
@@ -75,5 +77,5 @@ tasks.bootJar {
 }
 
 tasks.bootRun {
-    jvmArgs("--enable-native-access=ALL-UNNAMED")
+    jvmArgs = jvmArgs + "--enable-native-access=ALL-UNNAMED"
 }
