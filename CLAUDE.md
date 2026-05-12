@@ -40,3 +40,7 @@ JDK 25 toolchain이 필수 (`.java-version`, `build.gradle.kts`). Gradle wrapper
 - `SecretaryApplication.kt:17`에 **하드코딩된 Google API 키 fallback**이 있음. 커밋 전에 노출 위험을 확인할 것 (`System.getenv("GOOGLE_API_KEY") ?: "AIza..."`).
 - Koog와 Spring AI가 **서로 다른 환경변수 이름**을 요구한다. 둘 다 사용하려면 `GOOGLE_API_KEY`와 `GOOGLE_GENAI_API_KEY`를 모두 설정해야 한다. 통일하려면 양쪽 모두를 수정해야 함.
 - `main()`에서 `runApplication` 직후 `runBlocking`으로 에이전트를 1회 호출하고 출력만 한다. 이 코드는 데모 성격이며, 실제 진입점/요청 처리 흐름이 아직 정립되지 않았다.
+
+## Tracing
+
+Koog의 `OpenTelemetry` feature + `addLangfuseExporter()`로 self-hosted Langfuse v3에 OTLP/HTTP trace를 보낸다 (`AgentConfig.kt`). Langfuse 스택은 `docker-compose.yml`의 web/worker + clickhouse/minio/redis로 구성되며 `LANGFUSE_BASE_URL`, `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY` 환경변수로 연결한다. `secretary.tracing.verbose=true`로 켜면 prompt/completion 본문이 span attribute에 포함된다(기본 off — 대형 컨텍스트에서 메모리·네트워크 비용 큼).

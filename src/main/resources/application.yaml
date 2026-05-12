@@ -44,6 +44,8 @@ secretary:
       window-size: 20
     long-term-memory:
       top-k: 5
+  tracing:
+    verbose: false
 telegram:
   bot-token: ${TELEGRAM_BOT_TOKEN:}
   allowed-chat-ids: ${TELEGRAM_ALLOWED_CHAT_IDS:}

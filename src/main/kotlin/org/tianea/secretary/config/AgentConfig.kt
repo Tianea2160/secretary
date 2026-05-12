@@ -4,6 +4,7 @@ import ai.koog.agents.chatMemory.feature.ChatHistoryProvider
 import ai.koog.agents.chatMemory.feature.ChatMemory
 import ai.koog.agents.core.agent.AIAgent
 import ai.koog.agents.core.annotation.ExperimentalAgentsApi
+import ai.koog.agents.features.opentelemetry.feature.OpenTelemetry
 import ai.koog.agents.longtermmemory.feature.LongTermMemory
 import ai.koog.agents.longtermmemory.retrieval.SimilaritySearchStrategy
 import ai.koog.prompt.executor.clients.google.GoogleModels
@@ -23,12 +24,17 @@ class AgentConfig {
         vectorStorage: KoogVectorStore,
         @Value($$"${secretary.chat.memory.window-size}") windowSize: Int,
         @Value($$"${secretary.chat.long-term-memory.top-k}") topK: Int,
+        @Value($$"${secretary.tracing.verbose}") tracingVerbose: Boolean,
     ): AIAgent<String, String> =
         AIAgent(
             promptExecutor = promptExecutor,
             llmModel = GoogleModels.Gemini2_5Flash,
             systemPrompt = "You are a helpful Korean-speaking assistant. Answer concisely.",
         ) {
+            install(OpenTelemetry) {
+                setVerbose(tracingVerbose)
+                addLangfuseExporter()
+            }
             install(ChatMemory) {
                 chatHistoryProvider = historyProvider
                 windowSize(windowSize)
