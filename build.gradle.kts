@@ -64,18 +64,20 @@ kotlin {
     }
 }
 
-tasks.withType<Test> {
+val enableNativeAccess = "--enable-native-access=ALL-UNNAMED"
+
+tasks.withType<Test>().configureEach {
     useJUnitPlatform()
     maxParallelForks = 4
-    jvmArgs = jvmArgs + "--enable-native-access=ALL-UNNAMED"
+    jvmArgs(enableNativeAccess)
+}
+
+tasks.withType<JavaExec>().configureEach {
+    jvmArgs(enableNativeAccess)
 }
 
 tasks.bootJar {
     manifest {
         attributes["Enable-Native-Access"] = "ALL-UNNAMED"
     }
-}
-
-tasks.bootRun {
-    jvmArgs = jvmArgs + "--enable-native-access=ALL-UNNAMED"
 }
