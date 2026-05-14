@@ -9,6 +9,7 @@ koog = "0.8.0"
 telegrambots = "9.6.0"
 hypersistence-tsid = "2.1.4"
 ktlint-gradle = "14.2.0"
+commonmark = "0.28.0"
 
 [libraries]
 spring-ai-bom = { module = "org.springframework.ai:spring-ai-bom", version.ref = "spring-ai" }
@@ -45,6 +46,10 @@ junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher
 telegrambots-springboot-longpolling-starter = { module = "org.telegram:telegrambots-springboot-longpolling-starter", version.ref = "telegrambots" }
 
 telegrambots-client = { module = "org.telegram:telegrambots-client", version.ref = "telegrambots" }
+
+commonmark = { module = "org.commonmark:commonmark", version.ref = "commonmark" }
+commonmark-ext-gfm-tables = { module = "org.commonmark:commonmark-ext-gfm-tables", version.ref = "commonmark" }
+commonmark-ext-gfm-strikethrough = { module = "org.commonmark:commonmark-ext-gfm-strikethrough", version.ref = "commonmark" }
 
 [plugins]
 org-springframework-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }

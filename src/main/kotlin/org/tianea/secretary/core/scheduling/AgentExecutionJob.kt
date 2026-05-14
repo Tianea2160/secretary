@@ -6,9 +6,8 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory
 import org.springframework.context.annotation.Scope
 import org.springframework.scheduling.quartz.QuartzJobBean
 import org.springframework.stereotype.Component
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage
-import org.telegram.telegrambots.meta.generics.TelegramClient
 import org.tianea.secretary.core.agent.AssistantRunner
+import org.tianea.secretary.telegram.TelegramMessageSender
 
 /**
  * 트리거 시각에 발화: JobDataMap의 prompt로 agent를 다시 호출하고 결과를 원래 chat에 전송.
@@ -20,7 +19,7 @@ import org.tianea.secretary.core.agent.AssistantRunner
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 class AgentExecutionJob(
     private val assistantRunner: AssistantRunner,
-    private val telegramClient: TelegramClient,
+    private val messageSender: TelegramMessageSender,
 ) : QuartzJobBean() {
     override fun executeInternal(context: JobExecutionContext) {
         val data = context.mergedJobDataMap
@@ -34,30 +33,11 @@ class AgentExecutionJob(
             runCatching { assistantRunner.run(chatId, sessionId, prompt) }
                 .onFailure { log.error("agent run failed scheduleId={}", scheduleId, it) }
                 .getOrElse { "[schedule:$scheduleId] 실행 실패: ${it.message}" }
-        send(chatId, reply)
-    }
-
-    private fun send(
-        chatId: Long,
-        text: String,
-    ) {
-        if (text.isEmpty()) return
-        text.chunked(TELEGRAM_TEXT_LIMIT).forEach { chunk ->
-            runCatching {
-                telegramClient.execute(
-                    SendMessage
-                        .builder()
-                        .chatId(chatId)
-                        .text(chunk)
-                        .build(),
-                )
-            }.onFailure { log.error("send failed chatId={}", chatId, it) }
-        }
+        messageSender.send(chatId, reply)
     }
 
     companion object {
         private val log = LoggerFactory.getLogger(AgentExecutionJob::class.java)
-        private const val TELEGRAM_TEXT_LIMIT = 4000
 
         const val KEY_SCHEDULE_ID = "scheduleId"
         const val KEY_NAME = "name"

@@ -5,9 +5,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.stereotype.Component
 import org.telegram.telegrambots.longpolling.util.LongPollingSingleThreadUpdateConsumer
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.Update
-import org.telegram.telegrambots.meta.generics.TelegramClient
 import org.tianea.secretary.core.agent.AssistantRunner
 import org.tianea.secretary.core.session.SessionService
 import org.tianea.secretary.core.session.SlashCommandCatalog
@@ -28,7 +26,7 @@ class UpdateRouter(
     private val sessionService: SessionService,
     private val slashCatalog: SlashCommandCatalog,
     private val assistantRunner: AssistantRunner,
-    private val telegramClient: TelegramClient,
+    private val messageSender: TelegramMessageSender,
     private val props: TelegramProperties,
 ) : LongPollingSingleThreadUpdateConsumer {
     private val log = LoggerFactory.getLogger(javaClass)
@@ -63,25 +61,7 @@ class UpdateRouter(
                 val sessionId = sessionService.currentOrNew(chatId)
                 listOf(assistantRunner.run(chatId, sessionId, text))
             }
-        replies.forEach { send(chatId, it) }
-    }
-
-    private fun send(
-        chatId: Long,
-        text: String,
-    ) {
-        if (text.isEmpty()) return
-        text.chunked(TELEGRAM_TEXT_LIMIT).forEach { chunk ->
-            runCatching {
-                telegramClient.execute(
-                    SendMessage
-                        .builder()
-                        .chatId(chatId)
-                        .text(chunk)
-                        .build(),
-                )
-            }.onFailure { log.error("send failed chatId={}", chatId, it) }
-        }
+        replies.forEach { messageSender.send(chatId, it) }
     }
 
     @PreDestroy
@@ -106,9 +86,6 @@ class UpdateRouter(
             ?: u.chatJoinRequest?.chat?.id
 
     companion object {
-        /** Telegram sendMessage text 상한은 4096자. UTF-16 surrogate 마진으로 4000 사용. */
-        private const val TELEGRAM_TEXT_LIMIT = 4000
-
         /** in-flight LLM 호출이 끝날 시간을 부여. 넘어가면 강제 종료. */
         private const val SHUTDOWN_TIMEOUT_SECONDS = 10L
     }
