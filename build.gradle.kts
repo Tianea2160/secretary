@@ -68,6 +68,7 @@ kotlin {
 
 val enableNativeAccess = "--enable-native-access=ALL-UNNAMED"
 val maxRamPercentage = "-XX:MaxRAMPercentage=60.0"
+val unsafeAllow = "--sun-misc-unsafe-memory-access=allow"
 
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
@@ -75,7 +76,7 @@ tasks.withType<Test>().configureEach {
 }
 
 tasks.withType<JavaExec>().configureEach {
-    jvmArgs(enableNativeAccess, maxRamPercentage)
+    jvmArgs(enableNativeAccess, maxRamPercentage, unsafeAllow)
 }
 
 tasks.bootJar {
