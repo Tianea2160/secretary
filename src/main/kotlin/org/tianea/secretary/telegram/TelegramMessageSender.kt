@@ -8,13 +8,16 @@ import org.telegram.telegrambots.meta.generics.TelegramClient
 /**
  * Telegram outbound 메시지의 단일 진입점.
  *
- * [TelegramMarkdownRenderer]가 만든 MarkdownV2 텍스트를 4096자 제한 안에서 chunk로 잘라 전송한다.
- * 호출처는 chatId와 원본 텍스트만 알면 되고 escape/parse_mode/chunk 규칙은 여기로 응축된다.
+ * 송신 텍스트는 [LatexUnicodeRenderer] → [TelegramMarkdownRenderer] 파이프라인을 거쳐
+ * `$...$` 수식이 유니코드로 평탄화된 뒤 MarkdownV2로 직렬화되고, 4096자 제한 안에서 chunk로
+ * 잘려 전송된다. 호출처는 chatId와 원본 텍스트만 알면 되고 escape/parse_mode/chunk 규칙은
+ * 여기로 응축된다.
  */
 @Component
 class TelegramMessageSender(
     private val telegramClient: TelegramClient,
-    private val markdownRenderer: TelegramMarkdownRenderer,
+    private val latexUnicodeRenderer: TelegramRenderer,
+    private val telegramMarkdownRenderer: TelegramRenderer,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -23,19 +26,27 @@ class TelegramMessageSender(
         text: String,
     ) {
         if (text.isEmpty()) return
-        markdownRenderer.render(text).chunked(TELEGRAM_TEXT_LIMIT).forEach { chunk ->
-            runCatching {
-                telegramClient.execute(
-                    SendMessage
-                        .builder()
-                        .chatId(chatId)
-                        .text(chunk)
-                        .parseMode(PARSE_MODE)
-                        .build(),
-                )
-            }.onFailure { log.error("send failed chatId={}", chatId, it) }
-        }
+
+        text
+            .let(latexUnicodeRenderer::render)
+            .let(telegramMarkdownRenderer::render)
+            .chunked(TELEGRAM_TEXT_LIMIT)
+            .forEach { chunk -> doSend(chatId, chunk) }
     }
+
+    private fun doSend(
+        chatId: Long,
+        chunk: String,
+    ) = runCatching {
+        telegramClient.execute(
+            SendMessage
+                .builder()
+                .chatId(chatId)
+                .text(chunk)
+                .parseMode(PARSE_MODE)
+                .build(),
+        )
+    }.onFailure { log.error("send failed chatId={}", chatId, it) }
 
     private companion object {
         /** Telegram sendMessage text 상한은 4096자. UTF-16 surrogate 마진으로 4000 사용. */

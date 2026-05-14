@@ -42,7 +42,7 @@ import org.springframework.stereotype.Component
  * 재직렬화한다.
  */
 @Component
-class TelegramMarkdownRenderer {
+class TelegramMarkdownRenderer : TelegramRenderer {
     private val parser: Parser =
         Parser
             .builder()
@@ -50,9 +50,9 @@ class TelegramMarkdownRenderer {
             .build()
 
     /** 입력이 blank면 그대로 돌려준다. */
-    fun render(markdown: String): String {
-        if (markdown.isBlank()) return markdown
-        val doc = parser.parse(markdown)
+    override fun render(message: String): String {
+        if (message.isBlank()) return message
+        val doc = parser.parse(message)
         val visitor = TelegramVisitor()
         doc.accept(visitor)
         return visitor.result().trimEnd()
