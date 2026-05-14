@@ -72,7 +72,7 @@ val unsafeAllow = "--sun-misc-unsafe-memory-access=allow"
 
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
-    maxParallelForks = 4
+    maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
 }
 
 tasks.withType<JavaExec>().configureEach {
