@@ -32,7 +32,7 @@ spring:
       base-url: http://localhost:11434
       chat:
         options:
-          model: qwen3.6:latest
+          model: phi4-mini:latest
       embedding:
         options:
           model: qwen3-embedding:8b
