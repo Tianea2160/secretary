@@ -1,0 +1,49 @@
+name: Build Boot Image
+
+on:
+  push:
+    branches:
+      - release
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-boot-image:
+    name: Build and Push Boot Image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create image tag
+        id: image
+        run: |
+          echo "tag=$(TZ=Asia/Seoul date +%Y%m%d%H%M%S)" >> "$GITHUB_OUTPUT"
+
+      - name: Test
+        run: ./gradlew test
+
+      - name: Build and push image
+        run: >
+          ./gradlew bootBuildImage
+          --imageName ghcr.io/tianea2160/secretary:${{ steps.image.outputs.tag }}
+          --publishImage
