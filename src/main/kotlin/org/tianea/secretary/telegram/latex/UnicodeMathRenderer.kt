@@ -72,12 +72,18 @@ internal object UnicodeMathRenderer {
 
     private fun delimiterToUnicode(delimiter: String): String =
         when {
-            delimiter == "." -> ""
+            delimiter == "." -> {
+                ""
+            }
+
             delimiter.startsWith("\\") -> {
                 val name = delimiter.removePrefix("\\")
                 LatexSymbols.DELIMITER_MAP[name] ?: LatexSymbols.COMMAND_MAP[name] ?: delimiter
             }
-            else -> delimiter
+
+            else -> {
+                delimiter
+            }
         }
 
     private fun renderBigOperator(node: MathNode.BigOperator): String {
