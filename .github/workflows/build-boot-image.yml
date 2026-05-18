@@ -26,6 +26,9 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/release' }}
+          cache-cleanup: on-success
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
@@ -34,10 +37,26 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GHCR_TOKEN }}
 
+      - name: Pre-pull Paketo images
+        run: |
+          docker pull paketobuildpacks/builder-jammy-base &
+          docker pull paketobuildpacks/run-jammy-tiny &
+          wait
+
       - name: Create image tag
         id: image
         run: |
           echo "tag=$(TZ=Asia/Seoul date +%Y%m%d%H%M%S)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache buildpack layers
+        uses: actions/cache@v4
+        with:
+          path: |
+            /tmp/cache-secretary.build
+            /tmp/cache-secretary.launch
+          key: paketo-${{ runner.os }}-${{ hashFiles('**/*.gradle*', 'gradle/libs.versions.toml') }}
+          restore-keys: |
+            paketo-${{ runner.os }}-
 
       - name: Build and push image
         env:

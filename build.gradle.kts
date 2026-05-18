@@ -1,3 +1,5 @@
+import org.springframework.boot.gradle.tasks.bundling.BootBuildImage
+
 plugins {
     `version-catalog`
     alias(libs.plugins.kotlin.jvm)
@@ -86,4 +88,9 @@ tasks.bootJar {
     manifest {
         attributes["Enable-Native-Access"] = "ALL-UNNAMED"
     }
+}
+
+tasks.named<BootBuildImage>("bootBuildImage") {
+    buildCache { bind { source.set("/tmp/cache-secretary.build") } }
+    launchCache { bind { source.set("/tmp/cache-secretary.launch") } }
 }
