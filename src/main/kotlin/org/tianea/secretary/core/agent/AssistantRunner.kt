@@ -17,12 +17,16 @@ import org.tianea.secretary.core.scheduling.ChatContext
 class AssistantRunner(
     private val factory: AssistantAgentFactory,
 ) {
+    /**
+     * @param messageId 처리중 표식을 부착할 사용자 메시지. 촉발 메시지가 없는 스케줄러 경로는 `null`.
+     */
     fun run(
         chatId: Long,
         sessionId: String,
         prompt: String,
+        messageId: Int?,
     ): String =
-        runBlocking(ChatContext(chatId, sessionId)) {
+        runBlocking(ChatContext(chatId, sessionId, messageId)) {
             factory.create().run(prompt, sessionId)
         }
 }

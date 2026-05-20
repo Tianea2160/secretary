@@ -1,6 +1,7 @@
 package org.tianea.secretary.config
 
 import ai.koog.agents.chatMemory.feature.ChatHistoryProvider
+import ai.koog.agents.core.agent.entity.AIAgentGraphStrategy
 import ai.koog.prompt.executor.clients.google.GoogleModels
 import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.prompt.llm.LLMCapability
@@ -12,15 +13,18 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.tianea.secretary.core.agent.AssistantAgentFactory
 import org.tianea.secretary.core.scheduling.SchedulingTools
+import org.tianea.secretary.telegram.TelegramReactionSender
 
 @Configuration
 class AgentConfig {
     @Bean
     fun assistantAgentFactory(
         promptExecutor: PromptExecutor,
+        chatStrategy: AIAgentGraphStrategy<String, String>,
         historyProvider: ChatHistoryProvider,
         vectorStorage: KoogVectorStore,
         schedulingTools: SchedulingTools,
+        reactionSender: TelegramReactionSender,
         @Value($$"${secretary.chat.memory.window-size}") windowSize: Int,
         @Value($$"${secretary.chat.long-term-memory.top-k}") topK: Int,
         @Value($$"${secretary.tracing.verbose}") tracingVerbose: Boolean,
@@ -29,9 +33,11 @@ class AgentConfig {
     ): AssistantAgentFactory =
         AssistantAgentFactory(
             promptExecutor = promptExecutor,
+            chatStrategy = chatStrategy,
             historyProvider = historyProvider,
             vectorStorage = vectorStorage,
             schedulingTools = schedulingTools,
+            reactionSender = reactionSender,
             llmModel = resolveLlmModel(chatProvider, ollamaChatModel),
             windowSize = windowSize,
             topK = topK,

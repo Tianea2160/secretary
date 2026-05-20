@@ -42,9 +42,10 @@ class UpdateRouter(
             log.warn("Rejected chat_id={} (not in allowlist)", chatId)
             return
         }
-        val text = update.message?.text ?: return
+        val message = update.message ?: return
+        val text = message.text ?: return
         workers.execute {
-            runCatching { handle(chatId, text) }
+            runCatching { handle(chatId, text, message.messageId) }
                 .onFailure { log.error("update handling failed chat_id={}", chatId, it) }
         }
     }
@@ -52,6 +53,7 @@ class UpdateRouter(
     private fun handle(
         chatId: Long,
         text: String,
+        messageId: Int,
     ) {
         log.debug("Incoming chat_id={} text=\"{}\"", chatId, text)
         val replies: List<String> =
@@ -59,7 +61,7 @@ class UpdateRouter(
                 slashCatalog.execute(text, chatId).messages
             } else {
                 val sessionId = sessionService.currentOrNew(chatId)
-                listOf(assistantRunner.run(chatId, sessionId, text))
+                listOf(assistantRunner.run(chatId, sessionId, text, messageId))
             }
         replies.forEach { messageSender.send(chatId, it) }
     }

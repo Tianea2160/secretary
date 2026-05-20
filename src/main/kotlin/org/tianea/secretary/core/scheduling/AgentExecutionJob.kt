@@ -30,7 +30,7 @@ class AgentExecutionJob(
 
         log.info("Schedule fired scheduleId={} chatId={}", scheduleId, chatId)
         val reply =
-            runCatching { assistantRunner.run(chatId, sessionId, prompt) }
+            runCatching { assistantRunner.run(chatId, sessionId, prompt, messageId = null) }
                 .onFailure { log.error("agent run failed scheduleId={}", scheduleId, it) }
                 .getOrElse { "[schedule:$scheduleId] 실행 실패: ${it.message}" }
         messageSender.send(chatId, reply)
