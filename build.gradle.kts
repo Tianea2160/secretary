@@ -1,5 +1,3 @@
-import org.springframework.boot.gradle.tasks.bundling.BootBuildImage
-
 plugins {
     `version-catalog`
     alias(libs.plugins.kotlin.jvm)
@@ -90,7 +88,7 @@ tasks.bootJar {
     }
 }
 
-tasks.named<BootBuildImage>("bootBuildImage") {
+tasks.bootBuildImage {
     buildCache { bind { source.set("/tmp/cache-secretary.build") } }
     launchCache { bind { source.set("/tmp/cache-secretary.launch") } }
 }
