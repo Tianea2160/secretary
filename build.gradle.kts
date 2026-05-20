@@ -12,6 +12,10 @@ group = "org.tianea"
 version = "0.0.1-SNAPSHOT"
 description = "secretary"
 
+extra["kotlin-serialization.version"] =
+    libs.versions.kotlinx.serialization
+        .get()
+
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(25)
@@ -22,16 +26,8 @@ repositories {
     mavenCentral()
 }
 
-extra["kotlin-serialization.version"] =
-    libs.versions.kotlinx.serialization
-        .get()
-extra["kotlin-coroutines.version"] =
-    libs.versions.kotlinx.coroutines
-        .get()
-
 dependencies {
     implementation(platform(libs.spring.ai.bom))
-    implementation(platform(libs.kotlinx.coroutines.bom))
 
     implementation(libs.spring.boot.starter)
     implementation(libs.kotlin.reflect)
@@ -54,9 +50,6 @@ dependencies {
     implementation(libs.spring.boot.starter.quartz)
     implementation(libs.hypersistence.tsid)
     runtimeOnly(libs.postgresql)
-
-    implementation(libs.kotlinx.coroutines.core)
-    implementation(libs.kotlinx.coroutines.core.jvm)
 
     testImplementation(libs.spring.boot.starter.test)
     testImplementation(libs.kotlin.test.junit5)

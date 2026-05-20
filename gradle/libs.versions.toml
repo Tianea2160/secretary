@@ -3,17 +3,15 @@ kotlin = "2.3.21"
 spring-boot = "3.5.14"
 dependency-management = "1.1.7"
 spring-ai = "1.1.6"
-kotlinx-coroutines = "1.11.0"
-kotlinx-serialization = "1.10.0"
 koog = "0.8.0"
 telegrambots = "9.6.0"
 hypersistence-tsid = "2.1.4"
 ktlint-gradle = "14.2.0"
 commonmark = "0.28.0"
+kotlinx-serialization = "1.11.0"
 
 [libraries]
 spring-ai-bom = { module = "org.springframework.ai:spring-ai-bom", version.ref = "spring-ai" }
-kotlinx-coroutines-bom = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-bom", version.ref = "kotlinx-coroutines" }
 
 spring-boot-starter = { module = "org.springframework.boot:spring-boot-starter" }
 spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
@@ -37,9 +35,6 @@ spring-boot-starter-quartz = { module = "org.springframework.boot:spring-boot-st
 postgresql = { module = "org.postgresql:postgresql" }
 
 hypersistence-tsid = { module = "io.hypersistence:hypersistence-tsid", version.ref = "hypersistence-tsid" }
-
-kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core" }
-kotlinx-coroutines-core-jvm = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm" }
 
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
 
