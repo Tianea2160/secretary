@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Spring Boot 3.5 기반의 AI 비서(secretary) 애플리케이션. Kotlin 2.3 + JDK 25 toolchain으로 구성되어 있으며, **두 가지 AI 통합 방식이 공존**한다:
 
-- **Koog Agents** (`ai.koog:koog-agents`) — `main()`의 `runBlocking` 블록에서 직접 `AIAgent`를 인스턴스화해 호출
+- **Koog Agents** (`ai.koog:koog-agents`) — `AssistantRunner` → `AssistantAgentFactory.create()`가 호출마다 새 `AIAgent`를 만들어 `ChatStrategyConfig`의 그래프 전략으로 실행
 - **Spring AI Google GenAI Starter** (`spring-ai-starter-model-google-genai`) — `application.yaml`로 설정된 자동 구성
 
 두 경로가 같은 Gemini 모델 패밀리를 사용하지만 **설정 키와 모델명이 분리되어 있다**:
@@ -39,7 +39,19 @@ JDK 25 toolchain이 필수 (`.java-version`, `build.gradle.kts`). Gradle wrapper
 
 - `SecretaryApplication.kt:17`에 **하드코딩된 Google API 키 fallback**이 있음. 커밋 전에 노출 위험을 확인할 것 (`System.getenv("GOOGLE_API_KEY") ?: "AIza..."`).
 - Koog와 Spring AI가 **서로 다른 환경변수 이름**을 요구한다. 둘 다 사용하려면 `GOOGLE_API_KEY`와 `GOOGLE_GENAI_API_KEY`를 모두 설정해야 한다. 통일하려면 양쪽 모두를 수정해야 함.
-- `main()`에서 `runApplication` 직후 `runBlocking`으로 에이전트를 1회 호출하고 출력만 한다. 이 코드는 데모 성격이며, 실제 진입점/요청 처리 흐름이 아직 정립되지 않았다.
+
+## Agent Runtime
+
+요청 진입점은 텔레그램 `UpdateRouter`와 Quartz `AgentExecutionJob` 둘 다 `AssistantRunner.run()`으로 수렴한다.
+`AssistantRunner`는 `AssistantAgentFactory.create()`로 **호출마다 새 `AIAgent`**를 만든다 — Koog `OpenTelemetry`
+feature의 span tree가 인스턴스 단위라 공유 시 race가 발생하기 때문.
+
+- **그래프 전략**: `ChatStrategyConfig`가 `@Bean`으로 `AIAgentGraphStrategy`를 제공한다. 전략은 실행 상태 없는
+  청사진이라 싱글턴으로 공유하고, `AIAgent`만 호출별로 만든다. DSL 치트시트: `docs/koog-strategy-graph.md`.
+- **호출별 데이터**: chatId·sessionId·messageId는 생성자 인자가 아니라 `ChatContext`(코루틴 컨텍스트 element)로
+  전파된다. 그래프 노드·Koog 도구·`EventHandler` 핸들러 모두 `currentCoroutineContext()[ChatContext]`로 읽는다.
+- **Koog 0.8.0 API 확인**: 공식 문서가 얇을 때 `~/.gradle/caches/modules-2/files-2.1/ai.koog/`의 jar를
+  `javap`로, `*-sources.jar`를 `unzip -p`로 열어 시그니처를 직접 검증한다.
 
 ## Tracing
 
