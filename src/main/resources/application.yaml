@@ -51,6 +51,9 @@ spring:
         index-type: NONE
         distance-type: COSINE_DISTANCE
         dimensions: 4096
+  threads:
+    virtual:
+      enabled: true
 secretary:
   chat:
     memory:
