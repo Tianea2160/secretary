@@ -49,7 +49,7 @@ jobs:
           echo "tag=$(TZ=Asia/Seoul date +%Y%m%d%H%M%S)" >> "$GITHUB_OUTPUT"
 
       - name: Cache buildpack layers
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             /tmp/cache-secretary.build
