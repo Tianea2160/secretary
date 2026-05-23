@@ -35,7 +35,7 @@ Telegram 메시지가 들어와 AI 응답으로 나가기까지의 흐름과 각
    ├─ install(ChatMemory)        → Postgres SPRING_AI_CHAT_MEMORY
    ├─ install(LongTermMemory)    → PgVector vector_store
    ├─ install(OpenTelemetry)     → Langfuse OTLP/HTTP
-   └─ strategy = chatStrategy()  → preprocess → callLLM → emitText
+   └─ strategy = chatStrategy()  → preprocess → retrieveKnowHow → callLLM → emitText → reflect → consolidate
         │ 응답 텍스트
         ▼
 [TelegramMessageSender] → LatexUnicodeRenderer → TelegramMarkdownRenderer → 4000자 청킹
@@ -54,7 +54,8 @@ Telegram 메시지가 들어와 AI 응답으로 나가기까지의 흐름과 각
 |---|---|---|
 | `org.tianea.secretary` | Spring Boot 진입점 (현재 `main()`은 컨텍스트 부팅만) | `SecretaryApplication.kt` |
 | `.config` | Koog `AIAgent` factory 빈 조립, OpenTelemetry exporter, LLModel 라우팅 | `AgentConfig.kt` |
-| `.core.agent` | 에이전트 호출 facade와 strategy graph | `AssistantRunner.kt`, `AssistantAgentFactory.kt`, `graph/ChatStrategy.kt` |
+| `.core.agent` | 에이전트 호출 facade와 strategy graph | `AssistantRunner.kt`, `AssistantAgentFactory.kt`, `graph/ChatStrategyConfig.kt` |
+| `.core.agent.knowhow` | 노하우 메모리 — 추출(reflect)·중복 판정(consolidate)·검색(retrieve) | `KnowHowStore.kt`, `KnowHowReflector.kt`, `KnowHowConsolidator.kt`, `KnowHowEntity.kt` |
 | `.core.scheduling` | Quartz 기반 도메인 스케줄러 (cron / interval) | `ScheduleService.kt`, `AgentExecutionJob.kt`, `SchedulingTools.kt` |
 | `.core.session` | 세션 식별과 슬래시 명령 카탈로그 | `SessionService.kt`, `SlashCommandCatalog.kt` |
 | `.telegram` | Telegram I/O, MarkdownV2 직렬화, 4000자 청킹 | `SecretaryBot.kt`, `UpdateRouter.kt`, `TelegramMessageSender.kt` |
@@ -62,7 +63,7 @@ Telegram 메시지가 들어와 AI 응답으로 나가기까지의 흐름과 각
 
 각 영역의 깊은 설명:
 
-- 메모리 두 단계 → [chat-memory.md](./chat-memory.md), [long-term-memory.md](./long-term-memory.md)
+- 메모리 세 계층 → [chat-memory.md](./chat-memory.md) (단기), [long-term-memory.md](./long-term-memory.md) (장기 의미검색), [know-how-memory.md](./know-how-memory.md) (절차적 노하우)
 - Koog DSL → [koog-strategy-graph.md](./koog-strategy-graph.md)
 - 두 AI 스택 선택 기준 → [koog-vs-spring-ai.md](./koog-vs-spring-ai.md)
 - 환경변수·yaml·compose → [configuration.md](./configuration.md)
@@ -93,5 +94,5 @@ Telegram 메시지가 들어와 AI 응답으로 나가기까지의 흐름과 각
 
 ## 출처
 
-- 코드: `SecretaryApplication.kt`, `config/AgentConfig.kt`, `core/agent/AssistantRunner.kt`, `core/agent/AssistantAgentFactory.kt`, `core/agent/graph/ChatStrategy.kt`, `telegram/UpdateRouter.kt`, `telegram/TelegramMessageSender.kt`, `core/session/SessionService.kt`, `core/scheduling/ScheduleService.kt`
+- 코드: `SecretaryApplication.kt`, `config/AgentConfig.kt`, `core/agent/AssistantRunner.kt`, `core/agent/AssistantAgentFactory.kt`, `core/agent/graph/ChatStrategyConfig.kt`, `core/agent/graph/nodes/`, `core/agent/knowhow/`, `telegram/UpdateRouter.kt`, `telegram/TelegramMessageSender.kt`, `core/session/SessionService.kt`, `core/scheduling/ScheduleService.kt`
 - 설정: [configuration.md](./configuration.md)

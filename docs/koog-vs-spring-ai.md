@@ -51,6 +51,7 @@ Koog가 제공하는 두 starter (`koog-spring-ai-starter-*`) 를 통해 Koog의
 | 단기 대화 메모리 (정책) | `install(ChatMemory) { windowSize(...) }` | `MessageWindowChatMemory` + `MessageChatMemoryAdvisor` | **Koog 정책** (windowSize 20) |
 | 단기 대화 메모리 (저장소) | `ChatHistoryProvider`(브릿지로 Spring AI 위임) | `ChatMemoryRepository` (JDBC/Cassandra/Mongo/Neo4j/Cosmos) | **Spring AI JDBC** → Postgres |
 | 장기 의미 검색 메모리 | 벡터 DB 기반 long-term memory 빌트인 ([docs.koog.ai](https://docs.koog.ai/)) | `VectorStore` + `VectorStoreChatMemoryAdvisor` ([docs.spring.io](https://docs.spring.io/spring-ai/reference/api/chat-memory.html)) | **Koog `LongTermMemory` + Spring AI PgVector** (자세한 내용은 [docs/long-term-memory.md](./long-term-memory.md)) |
+| 절차적 노하우 메모리 | strategy 그래프 노드 + `PromptExecutor.executeStructured`로 자체 조립 | 빌트인 추상화 없음 (직접 조립) | **Koog 그래프 노드 + Spring Data JPA + PgVector** ([docs/know-how-memory.md](./know-how-memory.md)) |
 | Tool calling | `@Tool`, ToolRegistry, MCP 클라이언트 ([Koog README](https://github.com/JetBrains/koog)) | `@Tool` + `ToolCallingManager`, MCP starter ([1.0 GA](https://spring.io/blog/2025/05/20/spring-ai-1-0-GA-released/)) | **미도입** |
 | Agent workflow / 분기·루프 | **Graph 기반 strategy** (node/edge/subgraph, 1급 추상화) | `ChatClient` Advisor — **선형 체인**. 1.1.0-M4 Recursive Advisor로 루프만 일부 ([Recursive Advisors](https://spring.io/blog/2025/11/04/spring-ai-recursive-advisors/)) | **Koog만 가능** (현재 단일 strategy) |
 | 멀티에이전트 / handoff | A2A 프로토콜 0.5.0 ([0.5.0 release](https://github.com/JetBrains/koog/releases/tag/0.5.0)) | 공식 추상화 없음 — Effective Agents 레시피 + 커뮤니티 모듈 ([Effective Agents](https://docs.spring.io/spring-ai/reference/api/effective-agents.html)) | **Koog가 우위** |
@@ -175,5 +176,5 @@ Koog와 Spring AI가 같은 Gemini 모델 패밀리를 쓰지만 키와 모델�
 - [Spring AI Reference — Effective Agents](https://docs.spring.io/spring-ai/reference/api/effective-agents.html)
 - [Spring AI Recursive Advisors](https://spring.io/blog/2025/11/04/spring-ai-recursive-advisors/)
 - [Agent Memory with Spring AI & Redis (foojay.io)](https://foojay.io/today/agent-memory-with-spring-ai-redis/)
-- 본 프로젝트 관련 문서: [docs/chat-memory.md](./chat-memory.md)
+- 본 프로젝트 관련 문서: [docs/chat-memory.md](./chat-memory.md), [docs/long-term-memory.md](./long-term-memory.md), [docs/know-how-memory.md](./know-how-memory.md)
 - 본 프로젝트 관련 코드: `build.gradle.kts`, `src/main/kotlin/org/tianea/secretary/config/AgentConfig.kt`, `src/main/kotlin/org/tianea/secretary/SecretaryApplication.kt`

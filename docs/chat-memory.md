@@ -4,6 +4,8 @@
 
 LLM 호출 간에 **대화 히스토리를 세션별로 격리·영속**해서 멀티턴 컨텍스트를 유지한다. 사용자가 동일 세션에서 후속 질문을 던지면 이전 메시지가 자동으로 프롬프트에 prepend 된다.
 
+> 메모리 계층의 위치: 단기(이 문서) → 장기 의미 검색([long-term-memory.md](./long-term-memory.md)) → 절차적 노하우([know-how-memory.md](./know-how-memory.md)). 노하우 메모리는 본 단기 ChatMemory에 노하우 블록이 영속되지 않도록 `rewritePrompt`로 user 메시지를 되돌린다 — 자세한 메커니즘은 know-how-memory.md "알려진 제약 §2" 참고.
+
 ## 설계 — 두 프레임워크의 메모리 추상화 결합
 
 본 프로젝트는 **Koog `AIAgent`** 가 LLM 호출을 담당하고, **Spring AI `ChatMemoryRepository`** 가 영속 저장소를 담당하는 하이브리드 구조다. 이 두 추상화는 모델이 다르므로 브릿지가 필요하다.

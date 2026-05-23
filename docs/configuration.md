@@ -83,12 +83,22 @@ secretary:
     long-term-memory.top-k: 5       # 벡터 검색 반환 개수
   tracing.verbose: false            # true면 prompt/completion 본문을 span에 포함
 
+know-how:
+  enabled: true                     # false 시 retrieve/reflect/consolidate 세 노드가 pass-through
+  retrieval:
+    top-k: 5                        # 노하우 유사도 검색 상위 K
+    token-budget: 1200              # 주입 노하우 합산 근사 토큰 상한
+  reflection:
+    min-importance: 0.5             # 이 미만 후보는 저장 안 함
+
 telegram:
   bot-token: ${TELEGRAM_BOT_TOKEN:}
   allowed-chat-ids: ${TELEGRAM_ALLOWED_CHAT_IDS:}
 ```
 
 `tracing.verbose=true`는 로컬 디버깅용. 운영에선 span attribute가 수 KB → 수 백 KB로 부풀어 Langfuse 송신 트래픽과 JVM span 버퍼가 함께 증가한다.
+
+`know-how.*` 세부 의미와 노드 동작은 [know-how-memory.md](./know-how-memory.md) 참고.
 
 ## docker-compose 서비스
 
@@ -116,4 +126,4 @@ telegram:
 - `.env.example`, `docker-compose.yml`, `src/main/resources/application.yaml`
 - `src/main/kotlin/org/tianea/secretary/config/AgentConfig.kt` — tracing.verbose, resolveLlmModel
 - `src/main/kotlin/org/tianea/secretary/telegram/TelegramProperties.kt` — telegram.\* 바인딩
-- 관련 문서: [chat-memory.md](./chat-memory.md), [long-term-memory.md](./long-term-memory.md), [koog-vs-spring-ai.md](./koog-vs-spring-ai.md)
+- 관련 문서: [chat-memory.md](./chat-memory.md), [long-term-memory.md](./long-term-memory.md), [know-how-memory.md](./know-how-memory.md), [koog-vs-spring-ai.md](./koog-vs-spring-ai.md)

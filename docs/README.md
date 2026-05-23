@@ -12,6 +12,7 @@ Secretary 프로젝트의 기술 문서 인덱스. 루트 [README.md](../README.
 
 - [chat-memory.md](./chat-memory.md) — 세션별 단기기억. Koog `ChatMemory` + Spring AI `JdbcChatMemoryRepository` 브릿지.
 - [long-term-memory.md](./long-term-memory.md) — PgVector 기반 장기기억. 4096차원 임베딩, top-k retrieval.
+- [know-how-memory.md](./know-how-memory.md) — 절차적 노하우 추출·축적·재사용. retrieve → reflect → consolidate 3노드.
 - [koog-strategy-graph.md](./koog-strategy-graph.md) — Koog `strategy { }` DSL 사용법 (선형 그래프 + 확장 패턴).
 - [tui-ffm.md](./tui-ffm.md) — Spring Shell + JLine FFM 터미널 백엔드.
 

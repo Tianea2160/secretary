@@ -4,6 +4,8 @@
 
 세션 윈도우(`window-size: 20`)를 넘어가는 과거 대화에서도 **의미적으로 관련된 부분을 자동 회수**해 prompt에 주입한다. 단기기억(`SPRING_AI_CHAT_MEMORY`)이 "최근 N개 메시지"의 시간순 컨텍스트라면, 장기기억은 "주제·의미가 비슷한 임의 시점의 메시지"를 다룬다.
 
+> 본 문서가 다루는 `vector_store`는 **원문 메시지** 벡터다. 같은 4096차원 임베딩을 공유하지만 **추출된 절차적 노하우**는 `know_how` 별도 테이블에 저장된다 — 메타데이터·수명주기가 다르기 때문. 자세한 내용은 [know-how-memory.md](./know-how-memory.md).
+
 ## 설계 — Koog `LongTermMemory` + Spring AI `PgVector` 결합
 
 본 프로젝트는 [docs/chat-memory.md](./chat-memory.md)와 동일한 하이브리드 패턴을 한 단계 더 적용한다 — **Koog feature가 정책을 담당하고 Spring AI가 인프라를 담당**한다.
