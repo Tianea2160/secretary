@@ -1,14 +1,22 @@
 package org.tianea.secretary.core.agent.graph
 
 import ai.koog.agents.core.agent.entity.AIAgentGraphStrategy
-import ai.koog.agents.core.dsl.builder.forwardTo
-import ai.koog.agents.core.dsl.builder.node
 import ai.koog.agents.core.dsl.builder.strategy
-import ai.koog.agents.core.dsl.extension.nodeLLMRequest
-import ai.koog.prompt.message.Message
-import kotlinx.coroutines.currentCoroutineContext
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.tianea.secretary.core.agent.graph.nodes.callLlmNodeDelegate
+import org.tianea.secretary.core.agent.graph.nodes.consolidateNodeDelegate
+import org.tianea.secretary.core.agent.graph.nodes.emitTextNodeDelegate
+import org.tianea.secretary.core.agent.graph.nodes.preprocessNodeDelegate
+import org.tianea.secretary.core.agent.graph.nodes.reactEndNodeDelegate
+import org.tianea.secretary.core.agent.graph.nodes.reactStartNodeDelegate
+import org.tianea.secretary.core.agent.graph.nodes.reflectNodeDelegate
+import org.tianea.secretary.core.agent.graph.nodes.retrieveKnowHowNodeDelegate
+import org.tianea.secretary.core.agent.graph.nodes.touchKnowHowNodeDelegate
+import org.tianea.secretary.core.agent.knowhow.KnowHowConsolidator
+import org.tianea.secretary.core.agent.knowhow.KnowHowReflector
+import org.tianea.secretary.core.agent.knowhow.KnowHowStore
 import org.tianea.secretary.core.scheduling.ChatContext
 import org.tianea.secretary.telegram.TelegramReactionSender
 
@@ -18,22 +26,21 @@ import org.tianea.secretary.telegram.TelegramReactionSender
  * `AIAgentGraphStrategy`는 실행 상태가 없는 그래프 청사진이라 모든 agent 인스턴스가 안전하게
  * 공유할 수 있다 → 싱글턴 빈으로 한 번만 빌드한다. 호출별 데이터(chatId·messageId)는 그래프 빌드가
  * 아니라 노드 실행 시점에 [ChatContext] 코루틴 컨텍스트로 흘러든다.
+ *
+ * 이 파일은 **노드 위임 + 엣지 선언**만 담당한다. 각 노드의 타입·이름·실행 로직은 `nodes/` 패키지의
+ * `*Node.kt` 파일 하나씩에 `<Name>NodeDelegate(...)` factory로 분리되어 있다 — 한 노드를 손볼 때는
+ * 그 파일만 열면 된다.
  */
 @Configuration
 class ChatStrategyConfig {
     /**
-     * 그래프 모양 (선형):
-     * `nodeStart → reactStart → preprocess → callLLM → emitText → reactEnd → nodeFinish`
+     * 그래프 모양:
+     * `nodeStart → reactStart → preprocess → retrieveKnowHow → callLLM → touchKnowHow → emitText → reflect → consolidate → reactEnd → nodeFinish`
      *
-     * 각 노드의 역할:
-     * - `reactStart` : [ChatContext]의 messageId가 있으면 처리중 표식(텔레그램 메시지 리액션)을 부착한다 —
-     *                  LLM이 이 대화를 처리 중임을 사용자에게 가시화한다. 입력은 그대로 통과.
-     * - `preprocess` : 사용자 입력을 trim. 향후 의도 분류·정규화 노드를 끼워 넣을 자리.
-     * - `callLLM`    : 내장 [nodeLLMRequest] — 입력 문자열을 user 메시지로 누적해 LLM 호출, 응답 반환.
-     * - `emitText`   : [Message.Response]에서 텍스트만 추출해 `AIAgent<String, String>` 출력 타입 유지.
-     * - `reactEnd`   : 정상 완료 시 처리중 표식을 제거한다. 출력은 그대로 통과.
+     * 각 노드의 정의·역할은 해당 `nodes/<Name>Node.kt`의 KDoc 참고.
      *
-     * `messageId`가 없는 스케줄러 경로는 `reactStart`/`reactEnd` 모두 no-op이 된다.
+     * `touchKnowHow`는 `callLLM` 성공 직후 채택된 노하우의 사용 카운트를 갱신한다 — retrieveKnowHow 단계에서
+     * 미리 touch하면 LLM이 실패해 사용자에게 전달되지 못한 노하우도 사용 기록이 남아 recency가 왜곡된다.
      *
      * 표식 제거의 **실패 경로**는 이 그래프가 아니라 `AssistantAgentFactory`의 `EventHandler`
      * (`onAgentExecutionFailed`)가 담당한다. `callLLM`이 예외로 실패하면 그래프가 거기서 중단되어
@@ -43,39 +50,37 @@ class ChatStrategyConfig {
      * 시스템 프롬프트는 이 그래프가 아니라 `AssistantAgentFactory`의 `AIAgentConfig.withSystemPrompt`로
      * 한 번만 주입한다. `setupPrompt` 노드에서 매 턴 `appendPrompt { system(...) }`를 호출하면
      * `ChatMemory`가 시스템 메시지를 매 턴 누적해 프롬프트가 부풀어 오른다.
-     *
-     * 다음 단계에서 도구·분기·서브그래프를 추가할 때는 이 그래프에 노드를 더 선언하고 엣지를 잇기만 하면 된다 —
-     * 자세한 사용법은 `docs/koog-strategy-graph.md` 참고.
      */
     @Bean
-    fun chatStrategy(reactionSender: TelegramReactionSender): AIAgentGraphStrategy<String, String> {
-        suspend fun withCurrentMessage(action: (chatId: Long, messageId: Int) -> Unit) {
-            currentCoroutineContext()[ChatContext]?.let { ctx ->
-                ctx.messageId?.let { action(ctx.chatId, it) }
-            }
-        }
-
-        return strategy<String, String>("secretary-chat") {
-            val reactStart by
-                node<String, String>("reactStart") { input ->
-                    withCurrentMessage(reactionSender::setProcessing)
-                    input
-                }
-            val preprocess by node<String, String>("preprocess") { input -> input.trim() }
-            val callLLM by nodeLLMRequest("callLLM")
-            val emitText by node<Message.Response, String>("emitText") { response -> response.content }
-            val reactEnd by
-                node<String, String>("reactEnd") { output ->
-                    withCurrentMessage(reactionSender::clearProcessing)
-                    output
-                }
+    fun chatStrategy(
+        reactionSender: TelegramReactionSender,
+        knowHowStore: KnowHowStore,
+        knowHowReflector: KnowHowReflector,
+        knowHowConsolidator: KnowHowConsolidator,
+        @Value($$"${know-how.enabled}") enabled: Boolean,
+        @Value($$"${know-how.retrieval.top-k}") topK: Int,
+        @Value($$"${know-how.retrieval.token-budget}") tokenBudget: Int,
+    ): AIAgentGraphStrategy<String, String> =
+        strategy("secretary-chat") {
+            val reactStart by reactStartNodeDelegate(reactionSender)
+            val preprocess by preprocessNodeDelegate()
+            val retrieveKnowHow by retrieveKnowHowNodeDelegate(knowHowStore, enabled, topK, tokenBudget)
+            val callLLM by callLlmNodeDelegate()
+            val touchKnowHow by touchKnowHowNodeDelegate(knowHowStore)
+            val emitText by emitTextNodeDelegate()
+            val reflect by reflectNodeDelegate(knowHowReflector, enabled)
+            val consolidate by consolidateNodeDelegate(knowHowConsolidator, enabled)
+            val reactEnd by reactEndNodeDelegate(reactionSender)
 
             edge(nodeStart forwardTo reactStart)
             edge(reactStart forwardTo preprocess)
-            edge(preprocess forwardTo callLLM)
-            edge(callLLM forwardTo emitText)
-            edge(emitText forwardTo reactEnd)
+            edge(preprocess forwardTo retrieveKnowHow)
+            edge(retrieveKnowHow forwardTo callLLM)
+            edge(callLLM forwardTo touchKnowHow)
+            edge(touchKnowHow forwardTo emitText)
+            edge(emitText forwardTo reflect)
+            edge(reflect forwardTo consolidate)
+            edge(consolidate forwardTo reactEnd)
             edge(reactEnd forwardTo nodeFinish)
         }
-    }
 }

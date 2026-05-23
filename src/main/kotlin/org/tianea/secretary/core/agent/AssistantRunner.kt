@@ -15,15 +15,10 @@ class AssistantRunner(
         sessionId: String,
         prompt: String,
         messageId: Int?,
-    ): String =
-        runBlocking(ChatContext(chatId, sessionId, messageId)) {
-            var agent = registry.getAgent(sessionId)
-
-            if (agent == null) {
-                agent = factory.create()
-                registry.register(sessionId, agent)
-            }
-
+    ): String {
+        val agent = registry.getOrCreate(sessionId) { factory.create() }
+        return runBlocking(ChatContext(chatId, sessionId, messageId)) {
             agent.run(prompt, sessionId)
         }
+    }
 }

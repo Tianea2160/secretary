@@ -6,6 +6,7 @@ import org.telegram.telegrambots.meta.api.methods.reactions.SetMessageReaction
 import org.telegram.telegrambots.meta.api.objects.reactions.ReactionType
 import org.telegram.telegrambots.meta.api.objects.reactions.ReactionTypeEmoji
 import org.telegram.telegrambots.meta.generics.TelegramClient
+import org.tianea.secretary.telegram.TelegramReactionSender.Companion.PROCESSING_EMOJI
 
 /**
  * LLM이 어느 대화를 처리 중인지 사용자에게 가시화하는 Telegram 메시지 리액션 송신자.

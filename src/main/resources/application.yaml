@@ -8,6 +8,10 @@ spring:
     url: jdbc:postgresql://localhost:5435/secretary
     username: secretary
     password: secretary
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
   quartz:
     job-store-type: jdbc
     jdbc:
@@ -32,7 +36,8 @@ spring:
       base-url: http://localhost:11434
       chat:
         options:
-          model: phi4-mini:latest
+          model: qwen3.5:9b-mlx
+          keep-alive: 30m
       embedding:
         options:
           model: qwen3-embedding:8b
@@ -40,6 +45,10 @@ spring:
         pull-model-strategy: when_missing
         timeout: 10m
         max-retries: 1
+  http:
+    client:
+      connect-timeout: 30s
+      read-timeout: 10m
     chat:
       memory:
         repository:
@@ -61,7 +70,14 @@ secretary:
     long-term-memory:
       top-k: 5
   tracing:
-    verbose: false
+    verbose: true
+know-how:
+  enabled: true
+  retrieval:
+    top-k: 5
+    token-budget: 1200
+  reflection:
+    min-importance: 0.5
 telegram:
   bot-token: ${TELEGRAM_BOT_TOKEN:}
   allowed-chat-ids: ${TELEGRAM_ALLOWED_CHAT_IDS:}

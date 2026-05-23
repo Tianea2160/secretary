@@ -2,6 +2,7 @@ plugins {
     `version-catalog`
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.spring)
+    alias(libs.plugins.kotlin.jpa)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.org.springframework.boot)
     alias(libs.plugins.io.spring.dependency.management)
@@ -47,6 +48,8 @@ dependencies {
     implementation(libs.commonmark.ext.gfm.tables)
     implementation(libs.commonmark.ext.gfm.strikethrough)
     implementation(libs.spring.boot.starter.jdbc)
+    implementation(libs.spring.boot.starter.data.jpa)
+    implementation(libs.hibernate.vector)
     implementation(libs.spring.boot.starter.quartz)
     implementation(libs.hypersistence.tsid)
     runtimeOnly(libs.postgresql)

@@ -109,52 +109,63 @@ fun <Input, Output> strategy(
 `ChatStrategyConfig.kt:50–80`의 전체 선언 — `@Bean` 메서드 안에서 `strategy { }`를 빌드해 반환한다:
 
 ```kotlin
-// ChatStrategyConfig.kt:50–80
+// ChatStrategyConfig.kt (현재 상태 — 노하우 노드 포함)
 @Bean
-fun chatStrategy(reactionSender: TelegramReactionSender): AIAgentGraphStrategy<String, String> {
-    suspend fun withCurrentMessage(action: (chatId: Long, messageId: Int) -> Unit) {
-        currentCoroutineContext()[ChatContext]?.let { ctx ->
-            ctx.messageId?.let { action(ctx.chatId, it) }
-        }
-    }
-
+fun chatStrategy(
+    reactionSender: TelegramReactionSender,
+    knowHowStore: KnowHowStore,
+    knowHowReflector: KnowHowReflector,
+    knowHowConsolidator: KnowHowConsolidator,
+    @Value("\${know-how.enabled}") enabled: Boolean,
+    @Value("\${know-how.retrieval.top-k}") topK: Int,
+    @Value("\${know-how.retrieval.token-budget}") tokenBudget: Int,
+): AIAgentGraphStrategy<String, String> {
     return strategy<String, String>("secretary-chat") {
-        val reactStart by
-            node<String, String>("reactStart") { input ->
-                withCurrentMessage(reactionSender::setProcessing)
-                input
-            }
+        val reactStart by node<String, String>("reactStart") { ... }
         val preprocess by node<String, String>("preprocess") { input -> input.trim() }
-        val callLLM by nodeLLMRequest("callLLM")
+        val retrieveKnowHow by node<String, KnowHowWithInput>("retrieveKnowHow") { ... }
+        val callLLM by node<KnowHowWithInput, Message.Response>("callLLM") { ... }
         val emitText by node<Message.Response, String>("emitText") { response -> response.content }
-        val reactEnd by
-            node<String, String>("reactEnd") { output ->
-                withCurrentMessage(reactionSender::clearProcessing)
-                output
-            }
+        val reflect by node<String, ReflectOutput>("reflect") { ... }
+        val consolidate by node<ReflectOutput, String>("consolidate") { ... }
+        val reactEnd by node<String, String>("reactEnd") { ... }
 
         edge(nodeStart forwardTo reactStart)
         edge(reactStart forwardTo preprocess)
-        edge(preprocess forwardTo callLLM)
+        edge(preprocess forwardTo retrieveKnowHow)
+        edge(retrieveKnowHow forwardTo callLLM)
         edge(callLLM forwardTo emitText)
-        edge(emitText forwardTo reactEnd)
+        edge(emitText forwardTo reflect)
+        edge(reflect forwardTo consolidate)
+        edge(consolidate forwardTo reactEnd)
         edge(reactEnd forwardTo nodeFinish)
     }
 }
 ```
 
-현재 그래프 모양 (선형):
+현재 그래프 모양 (노하우 노드 포함):
 
 ```mermaid
 stateDiagram-v2
     direction LR
     [*] --> reactStart
     reactStart --> preprocess
-    preprocess --> callLLM
+    preprocess --> retrieveKnowHow
+    retrieveKnowHow --> callLLM
     callLLM --> emitText
-    emitText --> reactEnd
+    emitText --> reflect
+    reflect --> consolidate
+    consolidate --> reactEnd
     reactEnd --> [*]
 ```
+
+각 노드의 역할:
+- `retrieveKnowHow`: 입력과 관련된 노하우 top-k 검색·재랭킹·토큰 예산 필터링. `KnowHowWithInput`으로 원본 입력 + 노하우 블록을 함께 전달.
+- `callLLM`: 노하우 블록이 있으면 `"$노하우블록\n\n$원본입력"` 형태로 user 메시지를 추가. 응답 후 `rewritePrompt`로 원본 입력만 남겨 ChatMemory에 노하우가 영속되지 않게 한다.
+- `reflect`: 이번 턴에서 재사용 가능한 절차적 노하우 후보를 추출. `ReflectOutput`(응답 텍스트 + 후보 목록)을 `consolidate`로 전달. 예외 격리.
+- `consolidate`: 후보를 기존 노하우와 비교해 ADD/UPDATE/SKIP 판정 후 `know_how` 테이블에 반영. 예외 격리.
+
+**후속 옵션 — 응답 선전송**: 노하우 추출로 인한 응답 지연이 문제가 되면, 텔레그램 전송을 `emitText` 직후 그래프 노드에서 수행하고 reflect·consolidate를 그 뒤에 두는 리팩터링을 검토한다. 이렇게 하면 사용자는 LLM 응답을 즉시 받고, 노하우 추출은 백그라운드로 이어진다 — 단, 그래프는 선형이라 여전히 `nodeFinish`까지 대기하므로 `AssistantRunner`의 완료 시점은 동일하다.
 
 ---
 
@@ -391,8 +402,8 @@ install(EventHandler) {
 ### `maxAgentIterations` 기본값 3
 
 `AIAgentConfig.withSystemPrompt(prompt, llm)`의 `maxAgentIterations` 기본값은 **3**으로 매우 보수적이다.
-현재 선형 그래프(`nodeStart → reactStart → preprocess → callLLM → emitText → reactEnd → nodeFinish`)는
-노드 6개라 기본값 그대로 두면 즉시 `AIAgentMaxNumberOfIterationsReachedException`이 던져진다.
+현재 그래프(`nodeStart → reactStart → preprocess → retrieveKnowHow → callLLM → emitText → reflect → consolidate → reactEnd → nodeFinish`)는
+노드 10개다. 기본값 3으로는 즉시 `AIAgentMaxNumberOfIterationsReachedException`이 던져진다.
 `AssistantAgentFactory.kt`의 `MAX_AGENT_ITERATIONS = 50` 상수가 이 값을 캡슐화한다. 새 노드를 추가할
 때마다 한도가 모자라지 않은지 점검할 것.
 

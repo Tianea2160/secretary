@@ -12,11 +12,44 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.tianea.secretary.core.agent.AssistantAgentFactory
+import org.tianea.secretary.core.agent.knowhow.KnowHowConsolidator
+import org.tianea.secretary.core.agent.knowhow.KnowHowReflector
+import org.tianea.secretary.core.agent.knowhow.KnowHowStore
 import org.tianea.secretary.core.scheduling.SchedulingTools
 import org.tianea.secretary.telegram.TelegramReactionSender
 
 @Configuration
 class AgentConfig {
+    @Bean
+    fun llmModel(
+        @Value("\${spring.ai.model.chat}") chatProvider: String,
+        @Value("\${spring.ai.ollama.chat.options.model:}") ollamaChatModel: String,
+    ): LLModel = resolveLlmModel(chatProvider, ollamaChatModel)
+
+    @Bean
+    fun knowHowReflector(
+        promptExecutor: PromptExecutor,
+        llmModel: LLModel,
+        @Value("\${know-how.reflection.min-importance}") minImportance: Double,
+    ): KnowHowReflector =
+        KnowHowReflector(
+            promptExecutor = promptExecutor,
+            model = llmModel,
+            minImportance = minImportance,
+        )
+
+    @Bean
+    fun knowHowConsolidator(
+        promptExecutor: PromptExecutor,
+        llmModel: LLModel,
+        store: KnowHowStore,
+    ): KnowHowConsolidator =
+        KnowHowConsolidator(
+            promptExecutor = promptExecutor,
+            model = llmModel,
+            store = store,
+        )
+
     @Bean
     fun assistantAgentFactory(
         promptExecutor: PromptExecutor,
@@ -25,11 +58,10 @@ class AgentConfig {
         vectorStorage: KoogVectorStore,
         schedulingTools: SchedulingTools,
         reactionSender: TelegramReactionSender,
-        @Value($$"${secretary.chat.memory.window-size}") windowSize: Int,
-        @Value($$"${secretary.chat.long-term-memory.top-k}") topK: Int,
-        @Value($$"${secretary.tracing.verbose}") tracingVerbose: Boolean,
-        @Value($$"${spring.ai.model.chat}") chatProvider: String,
-        @Value($$"${spring.ai.ollama.chat.options.model:}") ollamaChatModel: String,
+        llmModel: LLModel,
+        @Value("\${secretary.chat.memory.window-size}") windowSize: Int,
+        @Value("\${secretary.chat.long-term-memory.top-k}") topK: Int,
+        @Value("\${secretary.tracing.verbose}") tracingVerbose: Boolean,
     ): AssistantAgentFactory =
         AssistantAgentFactory(
             promptExecutor = promptExecutor,
@@ -38,7 +70,7 @@ class AgentConfig {
             vectorStorage = vectorStorage,
             schedulingTools = schedulingTools,
             reactionSender = reactionSender,
-            llmModel = resolveLlmModel(chatProvider, ollamaChatModel),
+            llmModel = llmModel,
             windowSize = windowSize,
             topK = topK,
             tracingVerbose = tracingVerbose,
