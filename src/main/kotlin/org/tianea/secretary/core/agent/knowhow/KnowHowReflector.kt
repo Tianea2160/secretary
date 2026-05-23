@@ -50,11 +50,13 @@ class KnowHowReflector(
                     system(REFLECT_SYSTEM_PROMPT)
                     user(
                         buildString {
-                            appendLine("## 사용자 입력")
+                            appendLine("## User input")
                             appendLine(userText)
                             appendLine()
-                            appendLine("## 어시스턴트 응답")
+                            appendLine("## Assistant response")
                             appendLine(assistantText)
+                            appendLine()
+                            appendLine("/no_think")
                         },
                     )
                 }
@@ -86,21 +88,21 @@ class KnowHowReflector(
 
         val REFLECT_SYSTEM_PROMPT =
             """
-            당신은 대화 내용에서 **재사용 가능한 절차적 노하우**를 추출하는 전문가입니다.
+            You are an expert at extracting **reusable procedural know-how** from conversations.
 
-            절차적 노하우란 "이런 상황에서는 이런 방식으로 접근하면 된다"는 방법론입니다.
-            - 단순한 사실 정보나 사용자 개인 선호가 아닌, **미래에도 유용한 작업 절차·접근법**만 추출하세요.
-            - 각 후보는 독립적으로 이해 가능해야 합니다.
-            - 해당 대화 턴에서 추출할 만한 노하우가 없다면 후보를 비워 두세요.
+            Procedural know-how is a methodology of the form "in this kind of situation, this approach works".
+            - Extract only **procedures or approaches that will remain useful in the future** — not raw facts or personal user preferences.
+            - Each candidate must be independently understandable.
+            - If this turn yields nothing worth extracting, return an empty candidates list.
 
-            각 후보에 대해:
-            - `intent`: "언제/어떤 상황에 이 노하우를 쓰는가"를 한 줄로 요약 (한국어, 50자 이내)
-            - `body`: 구체적인 절차·방법론 본문 (한국어, 500자 이내)
-            - `importance`: 이 노하우의 미래 재사용 가치 (0.0 ~ 1.0 실수)
-              - 0.9~1.0: 범용적이고 반복 적용 가능한 핵심 방법론
-              - 0.7~0.8: 특정 영역에서 유용한 접근법
-              - 0.5~0.6: 제한적 상황에서만 유용
-              - 0.5 미만: 일회성 또는 재사용 가치 낮음
+            For each candidate:
+            - `intent`: a one-line summary of "when/in what situation this know-how applies" (match the conversation language, ≤ 50 chars)
+            - `body`: the concrete procedure or methodology (match the conversation language, ≤ 500 chars)
+            - `importance`: future reusability of this know-how (real number 0.0–1.0)
+              - 0.9–1.0: generic, broadly reusable core methodology
+              - 0.7–0.8: useful approach within a specific domain
+              - 0.5–0.6: useful only in restricted situations
+              - below 0.5: one-off or low reuse value
             """.trimIndent()
     }
 }

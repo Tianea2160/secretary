@@ -141,7 +141,7 @@ class KnowHowConsolidator(
         val similarText =
             similar.joinToString("\n\n") { scored ->
                 val kh = scored.knowHow
-                "ID: ${kh.id}\n의도: ${kh.intent}\n본문: ${kh.body}\n중요도: ${kh.importance}"
+                "ID: ${kh.id}\nintent: ${kh.intent}\nbody: ${kh.body}\nimportance: ${kh.importance}"
             }
 
         val judgmentPrompt =
@@ -149,13 +149,15 @@ class KnowHowConsolidator(
                 system(CONSOLIDATE_SYSTEM_PROMPT)
                 user(
                     buildString {
-                        appendLine("## 새 후보")
-                        appendLine("의도: ${candidate.intent}")
-                        appendLine("본문: ${candidate.body}")
-                        appendLine("중요도: ${candidate.importance}")
+                        appendLine("## New candidate")
+                        appendLine("intent: ${candidate.intent}")
+                        appendLine("body: ${candidate.body}")
+                        appendLine("importance: ${candidate.importance}")
                         appendLine()
-                        appendLine("## 유사 기존 노하우")
+                        appendLine("## Similar existing know-how")
                         appendLine(similarText)
+                        appendLine()
+                        appendLine("/no_think")
                     },
                 )
             }
@@ -183,19 +185,19 @@ class KnowHowConsolidator(
 
         val CONSOLIDATE_SYSTEM_PROMPT =
             """
-            당신은 새로운 노하우 후보와 기존 노하우 목록을 비교해 처리 방법을 결정하는 전문가입니다.
+            You are an expert that compares a new know-how candidate against existing know-how entries and decides how to handle it.
 
-            다음 중 하나를 결정하세요:
-            - ADD   : 기존 노하우와 충분히 다르므로 새로 추가해야 한다
-            - UPDATE : 기존 노하우 중 하나와 유사하지만 새 후보가 더 풍부하거나 보완 가능 → 기존 항목을 개선한다
-            - SKIP  : 기존 노하우와 내용이 중복되거나 저장 가치가 없다
+            Choose exactly one action:
+            - ADD    : the candidate is sufficiently different from all existing entries → store it as a new entry
+            - UPDATE : the candidate is similar to one of the existing entries but is richer or complements it → improve the existing entry
+            - SKIP   : the candidate duplicates an existing entry or is not worth storing
 
-            UPDATE를 선택할 때:
-            - `targetId`: 갱신할 기존 노하우의 ID
-            - `mergedIntent`: 통합된 의도 한 줄 (변경 없으면 기존 intent 유지)
-            - `mergedBody`: 통합된 본문 (두 내용을 병합하거나 개선)
+            When choosing UPDATE:
+            - `targetId`: the ID of the existing know-how to update
+            - `mergedIntent`: the merged intent line (keep the existing intent if no change is needed)
+            - `mergedBody`: the merged body (combine or improve the two)
 
-            ADD 또는 SKIP을 선택할 때는 `targetId`, `mergedIntent`, `mergedBody`를 null로 두세요.
+            When choosing ADD or SKIP, leave `targetId`, `mergedIntent`, and `mergedBody` as null.
             """.trimIndent()
     }
 }

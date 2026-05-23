@@ -36,7 +36,7 @@ spring:
       base-url: http://localhost:11434
       chat:
         options:
-          model: qwen3.5:4b-mlx
+          model: qwen3:4b-instruct-2507-q4_K_M
           keep-alive: 30m
       embedding:
         options:
@@ -46,10 +46,6 @@ spring:
         pull-model-strategy: when_missing
         timeout: 10m
         max-retries: 1
-  http:
-    client:
-      connect-timeout: 30s
-      read-timeout: 10m
     chat:
       memory:
         repository:
@@ -61,6 +57,10 @@ spring:
         index-type: NONE
         distance-type: COSINE_DISTANCE
         dimensions: 4096
+  http:
+    client:
+      connect-timeout: 30s
+      read-timeout: 10m
   threads:
     virtual:
       enabled: true
@@ -88,5 +88,6 @@ logging:
   level:
     root: info
     org.tianea: debug
+    ai.koog.prompt.executor.model.StructureFixingParser: debug
   pattern:
     file: "%d{HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n"
