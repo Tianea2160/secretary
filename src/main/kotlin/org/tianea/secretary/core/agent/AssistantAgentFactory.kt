@@ -16,7 +16,6 @@ import ai.koog.prompt.llm.LLModel
 import ai.koog.spring.ai.vectorstore.KoogVectorStore
 import kotlinx.coroutines.currentCoroutineContext
 import org.tianea.secretary.core.scheduling.ChatContext
-import org.tianea.secretary.core.scheduling.SchedulingTools
 import org.tianea.secretary.telegram.TelegramReactionSender
 
 private const val SYSTEM_PROMPT = "You are a helpful English-speaking assistant. Answer concisely."
@@ -40,9 +39,6 @@ private const val MAX_AGENT_ITERATIONS = 50
  * 그래프 청사진·채팅 메모리·벡터 스토어를 그대로 사용한다. 호출별 데이터(chatId·messageId)는
  * agent 생성이 아니라 [ChatContext] 코루틴 컨텍스트로 그래프 노드·핸들러에 흘러든다.
  *
- * `schedulingTools`는 다음 단계에서 도구 서브그래프를 추가할 때 다시 바인딩한다 — 현재는
- * `ToolRegistry { }`(빈 레지스트리)로 두고 의존성만 유지한다.
- *
  * 처리중 표식(텔레그램 메시지 리액션)은 `chatStrategy`의 `reactStart` 노드가 부착하고, 정상 완료 시
  * `reactEnd` 노드가 제거한다. `callLLM`이 예외로 실패하면 그래프가 중단되어 `reactEnd`에 도달하지
  * 못하므로, 예외 경로의 제거만 `EventHandler`의 `onAgentExecutionFailed`가 보완한다.
@@ -52,7 +48,6 @@ class AssistantAgentFactory(
     private val chatStrategy: AIAgentGraphStrategy<String, String>,
     private val historyProvider: ChatHistoryProvider,
     private val vectorStorage: KoogVectorStore,
-    private val schedulingTools: SchedulingTools,
     private val reactionSender: TelegramReactionSender,
     private val llmModel: LLModel,
     private val windowSize: Int,

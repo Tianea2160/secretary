@@ -1,17 +1,10 @@
 package org.tianea.secretary.telegram
 
-import jakarta.annotation.PreDestroy
-import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.stereotype.Component
 import org.telegram.telegrambots.longpolling.util.LongPollingSingleThreadUpdateConsumer
 import org.telegram.telegrambots.meta.api.objects.Update
-import org.tianea.secretary.core.agent.AssistantRunner
-import org.tianea.secretary.core.session.SessionService
-import org.tianea.secretary.core.session.SlashCommandCatalog
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
+import org.tianea.secretary.telegram.UpdateRouter.Companion.SHUTDOWN_GRACE_SECONDS
 
 /**
  * 텔레그램 update 라우터.
@@ -25,70 +18,15 @@ import java.util.concurrent.TimeUnit
 @Component
 @ConditionalOnExpression($$"'${telegram.bot-token:}' != ''")
 class UpdateRouter(
-    private val sessionService: SessionService,
-    private val slashCatalog: SlashCommandCatalog,
-    private val assistantRunner: AssistantRunner,
-    private val messageSender: TelegramMessageSender,
-    private val props: TelegramProperties,
+    private val telegramChatMessageService: TelegramChatMessageService,
 ) : LongPollingSingleThreadUpdateConsumer {
-    private val log = LoggerFactory.getLogger(javaClass)
-    private val executor: ExecutorService = Executors.newVirtualThreadPerTaskExecutor()
-
     override fun consume(update: Update) {
-        val chatId = extractChatId(update) ?: return
-        if (chatId !in props.allowedChatIds) {
-            log.warn("Rejected chat_id={} (not in allowlist)", chatId)
-            return
-        }
         val message = update.message ?: return
-        val text = message.text ?: return
-        val messageId = message.messageId
-        executor.execute {
-            runCatching { handle(chatId, text, messageId) }
-                .onFailure { log.error("update handling failed chat_id={}", chatId, it) }
-        }
-    }
 
-    @PreDestroy
-    fun shutdown() {
-        executor.shutdown()
-        if (!executor.awaitTermination(SHUTDOWN_GRACE_SECONDS, TimeUnit.SECONDS)) {
-            log.warn("update executor in-flight 작업이 {}초 내 종료되지 않음 — 강제 종료", SHUTDOWN_GRACE_SECONDS)
-            executor.shutdownNow()
-        }
+        telegramChatMessageService.addMessage(message)
     }
 
     private companion object {
         const val SHUTDOWN_GRACE_SECONDS = 10L
     }
-
-    private fun handle(
-        chatId: Long,
-        text: String,
-        messageId: Int,
-    ) {
-        log.debug("Incoming chat_id={} text=\"{}\"", chatId, text)
-        val replies: List<String> =
-            if (text.startsWith("/")) {
-                slashCatalog.execute(text, chatId).messages
-            } else {
-                val sessionId = sessionService.currentOrNew(chatId)
-                listOf(assistantRunner.run(chatId, sessionId, text, messageId))
-            }
-
-        replies.forEach { messageSender.send(chatId, it) }
-    }
-
-    private fun extractChatId(u: Update): Long? =
-        u.message?.chat?.id
-            ?: u.editedMessage?.chat?.id
-            ?: u.channelPost?.chat?.id
-            ?: u.editedChannelPost?.chat?.id
-            ?: u.callbackQuery
-                ?.message
-                ?.chat
-                ?.id
-            ?: u.myChatMember?.chat?.id
-            ?: u.chatMember?.chat?.id
-            ?: u.chatJoinRequest?.chat?.id
 }

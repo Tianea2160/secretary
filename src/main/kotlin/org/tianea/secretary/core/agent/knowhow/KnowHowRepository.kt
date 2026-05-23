@@ -37,7 +37,7 @@ interface KnowHowRepository : JpaRepository<KnowHowEntity, String> {
         chatId: Long,
         queryEmbedding: FloatArray,
         pageable: Pageable,
-    ): List<kotlin.Array<Any>>
+    ): List<Array<Any>>
 
     /**
      * 노하우의 `use_count`를 1 증가시키고 `last_used_at`을 [usedAt]으로 갱신한다.

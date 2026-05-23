@@ -15,7 +15,6 @@ import org.tianea.secretary.core.agent.AssistantAgentFactory
 import org.tianea.secretary.core.agent.knowhow.KnowHowConsolidator
 import org.tianea.secretary.core.agent.knowhow.KnowHowReflector
 import org.tianea.secretary.core.agent.knowhow.KnowHowStore
-import org.tianea.secretary.core.scheduling.SchedulingTools
 import org.tianea.secretary.telegram.TelegramReactionSender
 
 @Configuration
@@ -56,7 +55,6 @@ class AgentConfig {
         chatStrategy: AIAgentGraphStrategy<String, String>,
         historyProvider: ChatHistoryProvider,
         vectorStorage: KoogVectorStore,
-        schedulingTools: SchedulingTools,
         reactionSender: TelegramReactionSender,
         llmModel: LLModel,
         @Value("\${secretary.chat.memory.window-size}") windowSize: Int,
@@ -68,7 +66,6 @@ class AgentConfig {
             chatStrategy = chatStrategy,
             historyProvider = historyProvider,
             vectorStorage = vectorStorage,
-            schedulingTools = schedulingTools,
             reactionSender = reactionSender,
             llmModel = llmModel,
             windowSize = windowSize,
