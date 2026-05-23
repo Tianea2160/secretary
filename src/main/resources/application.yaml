@@ -36,11 +36,12 @@ spring:
       base-url: http://localhost:11434
       chat:
         options:
-          model: qwen3.5:9b-mlx
+          model: qwen3.5:4b-mlx
           keep-alive: 30m
       embedding:
         options:
           model: qwen3-embedding:8b
+          keep-alive: 30m
       init:
         pull-model-strategy: when_missing
         timeout: 10m
