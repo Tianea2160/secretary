@@ -26,12 +26,6 @@ spring:
     model:
       chat: ollama
       embedding: ollama
-    google:
-      genai:
-        api-key: ${GOOGLE_API_KEY:}
-        chat:
-          options:
-            model: gemini-2.5-flash
     ollama:
       base-url: http://localhost:11434
       chat:

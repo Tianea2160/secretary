@@ -10,8 +10,7 @@ package org.tianea.secretary.telegram.latex
  * - `{` `}` `^` `_` `&` → 각각의 구조 토큰
  * - 그 외 모든 문자 → [Token.Char] (공백·한글 포함, 그대로 보존)
  *
- * 공백은 명령 뒤에서도 소비하지 않고 [Token.Char]로 남긴다 — `\alpha + \beta`가 `α + β`로
- * 렌더되도록(기존 동작 유지).
+ * 공백은 명령 뒤에서도 소비하지 않고 [Token.Char]로 남긴다 — `\alpha + \beta`가 `α + β`로 렌더되도록(기존 동작 유지).
  */
 internal object LatexLexer {
     fun tokenize(input: String): List<Token> {
@@ -63,11 +62,7 @@ internal object LatexLexer {
      *
      * `\` 단독으로 문자열이 끝나면 평문 `\` 한 글자로 처리한다.
      */
-    private fun lexBackslash(
-        input: String,
-        start: Int,
-        tokens: MutableList<Token>,
-    ): Int {
+    private fun lexBackslash(input: String, start: Int, tokens: MutableList<Token>): Int {
         val next = start + 1
         if (next >= input.length) {
             tokens.add(Token.Char('\\'))

@@ -37,15 +37,13 @@ import org.springframework.stereotype.Component
 /**
  * LLM의 GFM 마크다운을 Telegram MarkdownV2 방언으로 직렬화한다.
  *
- * Telegram MarkdownV2는 표·LaTeX·헤더를 지원하지 않고 `_*[]()~` 백틱 `>#+-=|{}.!\` 모두를
- * escape하라고 요구해서, commonmark-java AST를 walk하며 Telegram이 받아들이는 형태로
- * 재직렬화한다.
+ * Telegram MarkdownV2는 표·LaTeX·헤더를 지원하지 않고 `_*[]()~` 백틱 `>#+-=|{}.!\` 모두를 escape하라고 요구해서,
+ * commonmark-java AST를 walk하며 Telegram이 받아들이는 형태로 재직렬화한다.
  */
 @Component
 class TelegramMarkdownRenderer : TelegramRenderer {
     private val parser: Parser =
-        Parser
-            .builder()
+        Parser.builder()
             .extensions(listOf(TablesExtension.create(), StrikethroughExtension.create()))
             .build()
 
@@ -179,15 +177,11 @@ private class TelegramVisitor : AbstractVisitor() {
             cur.accept(nested)
             cur = cur.next
         }
-        nested
-            .result()
-            .trimEnd()
-            .lineSequence()
-            .forEach { line ->
-                sb.append('>')
-                if (line.isNotEmpty()) sb.append(' ').append(line)
-                sb.append('\n')
-            }
+        nested.result().trimEnd().lineSequence().forEach { line ->
+            sb.append('>')
+            if (line.isNotEmpty()) sb.append(' ').append(line)
+            sb.append('\n')
+        }
         sb.append('\n')
     }
 
@@ -256,11 +250,7 @@ private class TelegramVisitor : AbstractVisitor() {
         sb.append("```\n\n")
     }
 
-    private fun appendTableRow(
-        row: List<String>,
-        widths: IntArray,
-        cols: Int,
-    ) {
+    private fun appendTableRow(row: List<String>, widths: IntArray, cols: Int) {
         for (i in 0 until cols) {
             sb.append((row.getOrNull(i) ?: "").padEnd(widths[i]))
             if (i < cols - 1) sb.append(" | ")
@@ -268,10 +258,7 @@ private class TelegramVisitor : AbstractVisitor() {
         sb.append('\n')
     }
 
-    private fun appendTableSeparator(
-        widths: IntArray,
-        cols: Int,
-    ) {
+    private fun appendTableSeparator(widths: IntArray, cols: Int) {
         for (i in 0 until cols) {
             sb.append("-".repeat(widths[i]))
             if (i < cols - 1) sb.append("-+-")
@@ -279,10 +266,7 @@ private class TelegramVisitor : AbstractVisitor() {
         sb.append('\n')
     }
 
-    private fun collectTableRows(
-        parent: Node,
-        rows: MutableList<List<String>>,
-    ) {
+    private fun collectTableRows(parent: Node, rows: MutableList<List<String>>) {
         var row = parent.firstChild
         while (row != null) {
             if (row is TableRow) {
@@ -305,7 +289,8 @@ private class TelegramVisitor : AbstractVisitor() {
             when (child) {
                 is Text -> out.append(child.literal)
                 is Code -> out.append(child.literal)
-                is SoftLineBreak, is HardLineBreak -> out.append(' ')
+                is SoftLineBreak,
+                is HardLineBreak -> out.append(' ')
                 else -> out.append(collectPlainText(child))
             }
             child = child.next
@@ -316,9 +301,25 @@ private class TelegramVisitor : AbstractVisitor() {
 
 private fun isReserved(c: Char): Boolean =
     when (c) {
-        '_', '*', '[', ']', '(', ')', '~', '`', '>',
-        '#', '+', '-', '=', '|', '{', '}', '.', '!', '\\',
-        -> true
+        '_',
+        '*',
+        '[',
+        ']',
+        '(',
+        ')',
+        '~',
+        '`',
+        '>',
+        '#',
+        '+',
+        '-',
+        '=',
+        '|',
+        '{',
+        '}',
+        '.',
+        '!',
+        '\\' -> true
 
         else -> false
     }

@@ -24,7 +24,7 @@
 implementation(libs.koog.agents)
 implementation(libs.koog.spring.ai.starter.model.chat)        // ← 브릿지
 implementation(libs.koog.spring.ai.starter.chat.memory)       // ← 브릿지
-implementation(libs.spring.ai.starter.model.google.genai)
+implementation(libs.spring.ai.starter.model.ollama)
 implementation(libs.spring.ai.starter.chat.memory.jdbc)
 ```
 
@@ -33,7 +33,7 @@ Koog가 제공하는 두 starter (`koog-spring-ai-starter-*`) 를 통해 Koog의
 ```
 [AIAgent (Koog)]                              ← agent 흐름·strategy·도구·메모리 정책
       │
-      ├── PromptExecutor ────► [Spring AI ChatModel ────► Google GenAI]
+      ├── PromptExecutor ────► [Spring AI ChatModel ────► Ollama]
       │
       └── ChatMemory ────────► [SpringAiChatHistoryProvider ────► JdbcChatMemoryRepository ────► Postgres]
 ```
@@ -47,7 +47,7 @@ Koog가 제공하는 두 starter (`koog-spring-ai-starter-*`) 를 통해 Koog의
 | 카테고리 | Koog | Spring AI | 본 프로젝트 채택 |
 |---|---|---|---|
 | LLM 호출 (모델 추상화) | `PromptExecutor`, `LLMClient` | `ChatModel`, `ChatClient` | **Spring AI** (Koog가 위임) |
-| 모델 카탈로그 | `GoogleModels.Gemini2_5Flash` 등 enum | yaml의 모델명 문자열 | 양쪽에 모델 ID가 분기 (CLAUDE.md 알려진 함정) |
+| 모델 카탈로그 | provider별 enum 제공 | yaml의 모델명 문자열 | **Spring AI yaml** (`spring.ai.ollama.chat.options.model`); Koog `LLModel` 메타데이터만 `AgentConfig.resolveLlmModel`이 생성 |
 | 단기 대화 메모리 (정책) | `install(ChatMemory) { windowSize(...) }` | `MessageWindowChatMemory` + `MessageChatMemoryAdvisor` | **Koog 정책** (windowSize 20) |
 | 단기 대화 메모리 (저장소) | `ChatHistoryProvider`(브릿지로 Spring AI 위임) | `ChatMemoryRepository` (JDBC/Cassandra/Mongo/Neo4j/Cosmos) | **Spring AI JDBC** → Postgres |
 | 장기 의미 검색 메모리 | 벡터 DB 기반 long-term memory 빌트인 ([docs.koog.ai](https://docs.koog.ai/)) | `VectorStore` + `VectorStoreChatMemoryAdvisor` ([docs.spring.io](https://docs.spring.io/spring-ai/reference/api/chat-memory.html)) | **Koog `LongTermMemory` + Spring AI PgVector** (자세한 내용은 [docs/long-term-memory.md](./long-term-memory.md)) |
@@ -136,14 +136,11 @@ Koog 0.8.0은 `kotlinx-serialization 1.8.1`로 컴파일됐는데, Spring Boot�
 
 해결: `build.gradle.kts:26-31`에서 `extra["kotlin-serialization.version"]`로 강제 오버라이드. 코루틴도 동일.
 
-### 2. 환경변수·모델명 분기
+### 2. provider 자동구성 충돌 (`spring.ai.model.*` 명시 필수)
 
-Koog와 Spring AI가 같은 Gemini 모델 패밀리를 쓰지만 키와 모델명이 분리됨:
+chat·embedding 모두 **Ollama 단일 provider**다. Spring AI 1.x는 classpath의 모든 provider 자동구성을 켜므로 `spring.ai.model.chat: ollama` / `spring.ai.model.embedding: ollama`를 명시하지 않으면 `ChatModel` 빈이 중복 등록돼 Koog `PromptExecutor`가 어느 것을 쓸지 모호해진다.
 
-- Koog: `GOOGLE_API_KEY` env + `Gemini2_5Flash` (코드 하드코딩)
-- Spring AI: `GOOGLE_GENAI_API_KEY` env + `gemini-2.0-flash` (yaml)
-
-본 프로젝트는 `koog-spring-ai-starter-model-chat` 브릿지로 Koog가 Spring AI ChatModel을 위임받아 쓰므로 **현재는 Spring AI 쪽 키만 살아있고 Koog 키는 미사용 상태**일 수 있음. `SecretaryApplication.kt:17`에 남아있는 하드코딩 fallback은 노출 위험으로 정리 대상.
+Koog는 `koog-spring-ai-starter-model-chat` 브릿지로 이 단일 ChatModel을 그대로 위임받으므로 별도 LLM API 키 없이 로컬 Ollama(`localhost:11434`)만 사용한다. Koog 측 `LLModel`(capability·contextLength 메타데이터)은 `AgentConfig.resolveLlmModel`이 yaml의 `spring.ai.model.chat` 값으로 생성한다.
 
 ### 3. ChatMemory 브릿지의 silent drop
 

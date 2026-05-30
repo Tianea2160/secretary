@@ -2,7 +2,6 @@ package org.tianea.secretary.config
 
 import ai.koog.agents.chatMemory.feature.ChatHistoryProvider
 import ai.koog.agents.core.agent.entity.AIAgentGraphStrategy
-import ai.koog.prompt.executor.clients.google.GoogleModels
 import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.prompt.llm.LLMCapability
 import ai.koog.prompt.llm.LLMProvider
@@ -43,11 +42,7 @@ class AgentConfig {
         llmModel: LLModel,
         store: KnowHowStore,
     ): KnowHowConsolidator =
-        KnowHowConsolidator(
-            promptExecutor = promptExecutor,
-            model = llmModel,
-            store = store,
-        )
+        KnowHowConsolidator(promptExecutor = promptExecutor, model = llmModel, store = store)
 
     @Bean
     fun assistantAgentFactory(
@@ -76,19 +71,11 @@ class AgentConfig {
     /**
      * `spring.ai.model.chat` 값으로 Koog `LLModel`을 결정한다.
      *
-     * Koog Spring AI starter는 `ChatModel` 빈의 클래스명으로 provider를 자동 감지하므로,
-     * `PromptExecutor`는 이 메서드와 무관하게 yaml 한 줄만으로 라우팅이 전환된다.
-     * 이 메서드는 Koog 측에 capability / contextLength 메타데이터를 알려주는 역할만 한다.
+     * Koog Spring AI starter는 `ChatModel` 빈의 클래스명으로 provider를 자동 감지하므로, `PromptExecutor`는 이 메서드와
+     * 무관하게 yaml 한 줄만으로 라우팅이 전환된다. 이 메서드는 Koog 측에 capability / contextLength 메타데이터를 알려주는 역할만 한다.
      */
-    private fun resolveLlmModel(
-        chatProvider: String,
-        ollamaChatModel: String,
-    ): LLModel =
+    private fun resolveLlmModel(chatProvider: String, ollamaChatModel: String): LLModel =
         when (chatProvider) {
-            "google-genai" -> {
-                GoogleModels.Gemini2_5Flash
-            }
-
             "ollama" -> {
                 require(ollamaChatModel.isNotBlank()) {
                     "spring.ai.ollama.chat.options.model must be set when spring.ai.model.chat=ollama"
@@ -108,7 +95,7 @@ class AgentConfig {
             }
 
             else -> {
-                error("Unsupported spring.ai.model.chat=$chatProvider (expected: google-genai | ollama)")
+                error("Unsupported spring.ai.model.chat=$chatProvider (expected: ollama)")
             }
         }
 }

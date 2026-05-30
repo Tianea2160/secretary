@@ -1,6 +1,8 @@
 package org.tianea.secretary.core.agent.graph
 
 import jakarta.persistence.EntityManager
+import kotlin.test.Test
+import kotlin.test.assertEquals
 import org.mockito.Mockito.mock
 import org.springframework.ai.embedding.EmbeddingModel
 import org.tianea.secretary.core.agent.knowhow.KnowHowConsolidator
@@ -8,8 +10,6 @@ import org.tianea.secretary.core.agent.knowhow.KnowHowReflector
 import org.tianea.secretary.core.agent.knowhow.KnowHowRepository
 import org.tianea.secretary.core.agent.knowhow.KnowHowStore
 import org.tianea.secretary.telegram.TelegramReactionSender
-import kotlin.test.Test
-import kotlin.test.assertEquals
 
 class ChatStrategyTest {
     private val reactionSender = mock(TelegramReactionSender::class.java)
@@ -25,30 +25,32 @@ class ChatStrategyTest {
     @Test
     fun chatStrategyBuildsWithoutError() {
         val strategy =
-            ChatStrategyConfig().chatStrategy(
-                reactionSender = reactionSender,
-                knowHowStore = knowHowStore,
-                knowHowReflector = knowHowReflector,
-                knowHowConsolidator = knowHowConsolidator,
-                enabled = true,
-                topK = 5,
-                tokenBudget = 1200,
-            )
+            ChatStrategyConfig()
+                .chatStrategy(
+                    reactionSender = reactionSender,
+                    knowHowStore = knowHowStore,
+                    knowHowReflector = knowHowReflector,
+                    knowHowConsolidator = knowHowConsolidator,
+                    enabled = true,
+                    topK = 5,
+                    tokenBudget = 1200,
+                )
         assertEquals("secretary-chat", strategy.name)
     }
 
     @Test
     fun chatStrategyBuildsWithKnowHowDisabled() {
         val strategy =
-            ChatStrategyConfig().chatStrategy(
-                reactionSender = reactionSender,
-                knowHowStore = knowHowStore,
-                knowHowReflector = knowHowReflector,
-                knowHowConsolidator = knowHowConsolidator,
-                enabled = false,
-                topK = 5,
-                tokenBudget = 1200,
-            )
+            ChatStrategyConfig()
+                .chatStrategy(
+                    reactionSender = reactionSender,
+                    knowHowStore = knowHowStore,
+                    knowHowReflector = knowHowReflector,
+                    knowHowConsolidator = knowHowConsolidator,
+                    enabled = false,
+                    topK = 5,
+                    tokenBudget = 1200,
+                )
         assertEquals("secretary-chat", strategy.name)
     }
 }

@@ -1,9 +1,9 @@
 package org.tianea.secretary.telegram.latex
 
-import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Test
 
 class LatexLexerTest {
     @Test

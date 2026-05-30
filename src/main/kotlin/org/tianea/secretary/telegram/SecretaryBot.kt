@@ -10,10 +10,8 @@ import org.telegram.telegrambots.longpolling.starter.SpringLongPollingBot
  */
 @Component
 @ConditionalOnExpression($$"'${telegram.bot-token:}' != ''")
-class SecretaryBot(
-    private val props: TelegramProperties,
-    private val router: UpdateRouter,
-) : SpringLongPollingBot {
+class SecretaryBot(private val props: TelegramProperties, private val router: UpdateRouter) :
+    SpringLongPollingBot {
     override fun getBotToken(): String = props.botToken
 
     override fun getUpdatesConsumer(): LongPollingUpdateConsumer = router

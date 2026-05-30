@@ -135,7 +135,7 @@ class AgentConfig {
         @Value("\${secretary.chat.memory.window-size}") windowSize: Int,
     ): AIAgent<String, String> = AIAgent(
         promptExecutor = promptExecutor,
-        llmModel = GoogleModels.Gemini2_5Flash,
+        llmModel = ollamaModel,                                         // AgentConfig.resolveLlmModel() — Ollama
         systemPrompt = "...",
     ) {
         install(ChatMemory) {

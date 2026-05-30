@@ -1,8 +1,8 @@
 package org.tianea.secretary.telegram
 
-import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Test
 
 class TelegramMarkdownRendererTest {
     private val renderer = TelegramMarkdownRenderer()
@@ -41,7 +41,8 @@ class TelegramMarkdownRendererTest {
             |---|------|
             | 0 | 0 |
             | 1 | 1 |
-            """.trimIndent()
+            """
+                .trimIndent()
         val out = renderer.render(md)
         assertTrue(out.contains("```"), "코드블록 fence가 있어야 함, actual=$out")
         assertTrue(out.contains("N"), "헤더 셀 유지, actual=$out")
@@ -77,7 +78,8 @@ class TelegramMarkdownRendererTest {
             ```kotlin
             val x = 1
             ```
-            """.trimIndent()
+            """
+                .trimIndent()
         val out = renderer.render(md)
         assertTrue(out.contains("```kotlin"), "info string 유지, actual=$out")
         assertTrue(out.contains("val x = 1"), "내용 보존, actual=$out")
