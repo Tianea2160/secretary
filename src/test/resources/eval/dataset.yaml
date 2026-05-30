@@ -1,0 +1,33 @@
+# 배포 전 회귀 방지용 고정 평가 데이터셋.
+# 각 item은 안정적인 기준답안(referenceAnswer)을 가지며, judge가 이를 기준으로 채점한다.
+# id는 Langfuse dataset-item upsert 키로도 쓰이므로 변경하지 말 것(변경 시 새 item 생성).
+items:
+  - id: capital-france
+    input: "What is the capital of France?"
+    referenceAnswer: "The capital of France is Paris."
+    tags: [factual, geography]
+
+  - id: water-boiling-point
+    input: "At what temperature does water boil at sea level, in Celsius?"
+    referenceAnswer: "Water boils at 100 degrees Celsius at sea level (standard atmospheric pressure)."
+    tags: [factual, science]
+
+  - id: speed-of-light
+    input: "Roughly how fast does light travel in a vacuum?"
+    referenceAnswer: "Light travels at about 300,000 kilometers per second (299,792 km/s) in a vacuum."
+    tags: [factual, science]
+
+  - id: list-comprehension-python
+    input: "In Python, how do you create a list of the squares of numbers 0 through 4 using a list comprehension?"
+    referenceAnswer: "Use a list comprehension: [x**2 for x in range(5)], which yields [0, 1, 4, 9, 16]."
+    tags: [coding, python]
+
+  - id: json-vs-yaml
+    input: "Name one practical difference between JSON and YAML as configuration formats."
+    referenceAnswer: "YAML supports comments and is more human-readable with indentation-based structure, while JSON does not support comments and uses braces/brackets. (Either direction of this contrast is acceptable.)"
+    tags: [factual, formats]
+
+  - id: arithmetic-word-problem
+    input: "If a train travels 60 km in 45 minutes, what is its average speed in km/h?"
+    referenceAnswer: "80 km/h. (60 km in 0.75 hours = 60 / 0.75 = 80 km/h.)"
+    tags: [reasoning, math]
