@@ -9,7 +9,4 @@ import org.springframework.boot.context.properties.ConfigurationProperties
  * @property allowedChatIds 응답할 chat_id 화이트리스트. 미허용 chat은 로그만 남기고 무시.
  */
 @ConfigurationProperties(prefix = "telegram")
-data class TelegramProperties(
-    val botToken: String = "",
-    val allowedChatIds: Set<Long> = emptySet(),
-)
+data class TelegramProperties(val botToken: String = "", val allowedChatIds: Set<Long> = emptySet())

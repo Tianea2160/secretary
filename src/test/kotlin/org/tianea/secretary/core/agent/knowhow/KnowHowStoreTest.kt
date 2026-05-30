@@ -1,12 +1,12 @@
 package org.tianea.secretary.core.agent.knowhow
 
 import jakarta.persistence.EntityManager
-import org.mockito.Mockito.mock
-import org.springframework.ai.embedding.EmbeddingModel
 import java.time.Instant
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import org.mockito.Mockito.mock
+import org.springframework.ai.embedding.EmbeddingModel
 
 class KnowHowStoreTest {
     private val store =
@@ -58,8 +58,14 @@ class KnowHowStoreTest {
     @Test
     fun rerankUsesCreatedAtWhenLastUsedAtIsNull() {
         val now = Instant.now()
-        val oldCreated = makeKnowHow(id = "old-created", createdAt = now.minusSeconds(10 * 24 * 3600L), lastUsedAt = null)
-        val newCreated = makeKnowHow(id = "new-created", createdAt = now.minusSeconds(3600L), lastUsedAt = null)
+        val oldCreated =
+            makeKnowHow(
+                id = "old-created",
+                createdAt = now.minusSeconds(10 * 24 * 3600L),
+                lastUsedAt = null,
+            )
+        val newCreated =
+            makeKnowHow(id = "new-created", createdAt = now.minusSeconds(3600L), lastUsedAt = null)
 
         val candidates =
             listOf(
@@ -78,9 +84,33 @@ class KnowHowStoreTest {
         val now = Instant.now()
         val candidates =
             listOf(
-                ScoredKnowHow(knowHow = makeKnowHow(id = "a", importance = 0.9, lastUsedAt = now.minusSeconds(3600)), similarity = 0.8),
-                ScoredKnowHow(knowHow = makeKnowHow(id = "b", importance = 0.5, lastUsedAt = now.minusSeconds(3600)), similarity = 0.8),
-                ScoredKnowHow(knowHow = makeKnowHow(id = "c", importance = 0.7, lastUsedAt = now.minusSeconds(3600)), similarity = 0.8),
+                ScoredKnowHow(
+                    knowHow =
+                        makeKnowHow(
+                            id = "a",
+                            importance = 0.9,
+                            lastUsedAt = now.minusSeconds(3600),
+                        ),
+                    similarity = 0.8,
+                ),
+                ScoredKnowHow(
+                    knowHow =
+                        makeKnowHow(
+                            id = "b",
+                            importance = 0.5,
+                            lastUsedAt = now.minusSeconds(3600),
+                        ),
+                    similarity = 0.8,
+                ),
+                ScoredKnowHow(
+                    knowHow =
+                        makeKnowHow(
+                            id = "c",
+                            importance = 0.7,
+                            lastUsedAt = now.minusSeconds(3600),
+                        ),
+                    similarity = 0.8,
+                ),
             )
 
         val reranked = store.rerank(candidates)
@@ -93,9 +123,18 @@ class KnowHowStoreTest {
     fun applyTokenBudgetExcludesItemsOnceBudgetExhausted() {
         val candidates =
             listOf(
-                ScoredKnowHow(knowHow = makeKnowHow(id = "a", body = "a".repeat(800)), similarity = 0.9),
-                ScoredKnowHow(knowHow = makeKnowHow(id = "b", body = "b".repeat(800)), similarity = 0.8),
-                ScoredKnowHow(knowHow = makeKnowHow(id = "c", body = "c".repeat(800)), similarity = 0.7),
+                ScoredKnowHow(
+                    knowHow = makeKnowHow(id = "a", body = "a".repeat(800)),
+                    similarity = 0.9,
+                ),
+                ScoredKnowHow(
+                    knowHow = makeKnowHow(id = "b", body = "b".repeat(800)),
+                    similarity = 0.8,
+                ),
+                ScoredKnowHow(
+                    knowHow = makeKnowHow(id = "c", body = "c".repeat(800)),
+                    similarity = 0.7,
+                ),
             )
 
         val result = store.applyTokenBudget(candidates, tokenBudget = 200)
@@ -108,9 +147,18 @@ class KnowHowStoreTest {
     fun applyTokenBudgetAllowsMultipleItemsWhenBudgetSufficient() {
         val candidates =
             listOf(
-                ScoredKnowHow(knowHow = makeKnowHow(id = "a", body = "x".repeat(400)), similarity = 0.9),
-                ScoredKnowHow(knowHow = makeKnowHow(id = "b", body = "y".repeat(400)), similarity = 0.8),
-                ScoredKnowHow(knowHow = makeKnowHow(id = "c", body = "z".repeat(400)), similarity = 0.7),
+                ScoredKnowHow(
+                    knowHow = makeKnowHow(id = "a", body = "x".repeat(400)),
+                    similarity = 0.9,
+                ),
+                ScoredKnowHow(
+                    knowHow = makeKnowHow(id = "b", body = "y".repeat(400)),
+                    similarity = 0.8,
+                ),
+                ScoredKnowHow(
+                    knowHow = makeKnowHow(id = "c", body = "z".repeat(400)),
+                    similarity = 0.7,
+                ),
             )
 
         val result = store.applyTokenBudget(candidates, tokenBudget = 200)
@@ -124,7 +172,7 @@ class KnowHowStoreTest {
     fun applyTokenBudgetReturnsEmptyListWhenBudgetIsZero() {
         val candidates =
             listOf(
-                ScoredKnowHow(knowHow = makeKnowHow(id = "a", body = "some text"), similarity = 0.9),
+                ScoredKnowHow(knowHow = makeKnowHow(id = "a", body = "some text"), similarity = 0.9)
             )
 
         val result = store.applyTokenBudget(candidates, tokenBudget = 0)
@@ -137,7 +185,10 @@ class KnowHowStoreTest {
         val candidates =
             listOf(
                 ScoredKnowHow(knowHow = makeKnowHow(id = "a", body = "short"), similarity = 0.9),
-                ScoredKnowHow(knowHow = makeKnowHow(id = "b", body = "also short"), similarity = 0.8),
+                ScoredKnowHow(
+                    knowHow = makeKnowHow(id = "b", body = "also short"),
+                    similarity = 0.8,
+                ),
             )
 
         val result = store.applyTokenBudget(candidates, tokenBudget = 10000)

@@ -1,12 +1,10 @@
 package org.tianea.secretary.core.session
 
 import io.hypersistence.tsid.TSID
-import org.springframework.stereotype.Component
 import java.util.concurrent.ConcurrentHashMap
+import org.springframework.stereotype.Component
 
-/**
- * in-memory chat_id → conversation_id 매핑. 재시작 시 매핑 소실 → [currentOrNew]가 새 TSID 발급.
- */
+/** in-memory chat_id → conversation_id 매핑. 재시작 시 매핑 소실 → [currentOrNew]가 새 TSID 발급. */
 @Component
 class SessionState {
     private val map = ConcurrentHashMap<Long, String>()

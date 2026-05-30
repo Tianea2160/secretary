@@ -1,12 +1,13 @@
 package org.tianea.secretary.telegram.latex
 
-import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Test
 
 class UnicodeMathRendererTest {
-    private fun render(input: String): String = UnicodeMathRenderer.render(LatexParser(LatexLexer.tokenize(input)).parse())
+    private fun render(input: String): String =
+        UnicodeMathRenderer.render(LatexParser(LatexLexer.tokenize(input)).parse())
 
     @Test
     fun greekLettersAreConverted() {
@@ -132,7 +133,10 @@ class UnicodeMathRendererTest {
 
     @Test
     fun eulerLagrangeScreenshotFlattensCleanly() {
-        val out = render("\\frac{\\partial L}{\\partial q} - \\frac{d}{dt}\\frac{\\partial L}{\\partial \\dot{q}} = 0")
+        val out =
+            render(
+                "\\frac{\\partial L}{\\partial q} - \\frac{d}{dt}\\frac{\\partial L}{\\partial \\dot{q}} = 0"
+            )
         assertFalse(out.contains("frac"), "actual=$out")
         assertTrue(out.contains("∂"), "actual=$out")
         assertTrue(out.contains("q̇"), "actual=$out")
@@ -144,7 +148,7 @@ class UnicodeMathRendererTest {
         val out =
             render(
                 "\\rho\\left(\\frac{\\partial \\mathbf{v}}{\\partial t} + \\mathbf{v}\\cdot\\nabla\\mathbf{v}\\right)" +
-                    " = -\\nabla p + \\mu\\nabla^2\\mathbf{v} + \\mathbf{f}",
+                    " = -\\nabla p + \\mu\\nabla^2\\mathbf{v} + \\mathbf{f}"
             )
         assertFalse(out.contains("mathbf"), "actual=$out")
         assertFalse(out.contains("\\left"), "actual=$out")

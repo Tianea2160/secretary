@@ -6,26 +6,20 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.org.springframework.boot)
     alias(libs.plugins.io.spring.dependency.management)
-    alias(libs.plugins.ktlint.gradle)
+    alias(libs.plugins.ktfmt)
 }
 
 group = "org.tianea"
+
 version = "0.0.1-SNAPSHOT"
+
 description = "secretary"
 
-extra["kotlin-serialization.version"] =
-    libs.versions.kotlinx.serialization
-        .get()
+extra["kotlin-serialization.version"] = libs.versions.kotlinx.serialization.get()
 
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(25)
-    }
-}
+java { toolchain { languageVersion = JavaLanguageVersion.of(25) } }
 
-repositories {
-    mavenCentral()
-}
+repositories { mavenCentral() }
 
 dependencies {
     implementation(platform(libs.spring.ai.bom))
@@ -34,11 +28,11 @@ dependencies {
     implementation(libs.kotlin.reflect)
 
     implementation(libs.koog.agents)
+    implementation(libs.koog.longterm.memory)
     implementation(libs.koog.spring.ai.starter.model.chat)
     implementation(libs.koog.spring.ai.starter.model.embedding)
     implementation(libs.koog.spring.ai.starter.chat.memory)
     implementation(libs.koog.spring.ai.starter.vector.store)
-    implementation(libs.spring.ai.starter.model.google.genai)
     implementation(libs.spring.ai.starter.model.ollama)
     implementation(libs.spring.ai.starter.chat.memory.jdbc)
     implementation(libs.spring.ai.starter.vector.store.pgvector)
@@ -65,6 +59,8 @@ kotlin {
     }
 }
 
+ktfmt { kotlinLangStyle() }
+
 val enableNativeAccess = "--enable-native-access=ALL-UNNAMED"
 val maxRamPercentage = "-XX:MaxRAMPercentage=60.0"
 val unsafeAllow = "--sun-misc-unsafe-memory-access=allow"
@@ -78,11 +74,7 @@ tasks.withType<JavaExec>().configureEach {
     jvmArgs(enableNativeAccess, maxRamPercentage, unsafeAllow)
 }
 
-tasks.bootJar {
-    manifest {
-        attributes["Enable-Native-Access"] = "ALL-UNNAMED"
-    }
-}
+tasks.bootJar { manifest { attributes["Enable-Native-Access"] = "ALL-UNNAMED" } }
 
 tasks.bootBuildImage {
     buildCache { bind { source.set("/tmp/cache-secretary.build") } }

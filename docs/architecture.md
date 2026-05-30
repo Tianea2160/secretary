@@ -74,8 +74,7 @@ Telegram 메시지가 들어와 AI 응답으로 나가기까지의 흐름과 각
 | 의존성 | 사용처 |
 |---|---|
 | PostgreSQL + pgvector | ChatMemory (JDBC), Quartz jobstore, VectorStore, Langfuse 메타데이터 |
-| Ollama | 로컬 chat/embedding (기본 `phi4-mini` + `qwen3-embedding:8b`, host:11434) |
-| Google Generative AI | Gemini 호출 — `spring.ai.model.chat=google-genai`일 때 활성 |
+| Ollama | 로컬 chat/embedding (`qwen3:4b-instruct-2507-q4_K_M` + `qwen3-embedding:8b`, host:11434) |
 | Langfuse (self-hosted) | OTLP/HTTP trace 수신 (`AssistantAgentFactory`의 `addLangfuseExporter()`) |
 | Telegram Bot API | Long Polling 수신 + `sendMessage` 송신 |
 | Quartz | JDBC jobstore 기반 스케줄러 (`spring-boot-starter-quartz`) |

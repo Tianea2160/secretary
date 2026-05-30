@@ -1,18 +1,17 @@
 package org.tianea.secretary.core.agent.knowhow
 
+import java.time.Instant
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.transaction.annotation.Transactional
-import java.time.Instant
 
 /**
  * `know_how` 테이블 Spring Data JPA 저장소.
  *
- * CRUD는 [JpaRepository] 기본 메서드로 처리하고, pgvector 코사인 거리 검색과
- * 사용 카운트 갱신만 커스텀 쿼리로 정의한다. 코사인 거리 함수 `cosine_distance`는
- * `hibernate-vector` 모듈이 PostgreSQL 다이얼렉트에 등록하는 HQL 함수다.
+ * CRUD는 [JpaRepository] 기본 메서드로 처리하고, pgvector 코사인 거리 검색과 사용 카운트 갱신만 커스텀 쿼리로 정의한다. 코사인 거리 함수
+ * `cosine_distance`는 `hibernate-vector` 모듈이 PostgreSQL 다이얼렉트에 등록하는 HQL 함수다.
  */
 interface KnowHowRepository : JpaRepository<KnowHowEntity, String> {
     /**
@@ -31,7 +30,7 @@ interface KnowHowRepository : JpaRepository<KnowHowEntity, String> {
           FROM KnowHowEntity e
          WHERE e.chatId = :chatId
          ORDER BY cosine_distance(e.embedding, :queryEmbedding)
-        """,
+        """
     )
     fun searchByEmbedding(
         chatId: Long,
@@ -54,10 +53,7 @@ interface KnowHowRepository : JpaRepository<KnowHowEntity, String> {
            SET e.useCount = e.useCount + 1,
                e.lastUsedAt = :usedAt
          WHERE e.id = :id
-        """,
+        """
     )
-    fun incrementUsage(
-        id: String,
-        usedAt: Instant,
-    ): Int
+    fun incrementUsage(id: String, usedAt: Instant): Int
 }

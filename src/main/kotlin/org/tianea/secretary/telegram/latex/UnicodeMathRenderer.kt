@@ -3,9 +3,8 @@ package org.tianea.secretary.telegram.latex
 /**
  * [MathNode] AST를 유니코드 평문으로 렌더링한다.
  *
- * 폴백 정책: 유니코드로 매핑 불가능한 노드는 [MathNode.toLatex]로 원본 LaTeX를 그대로 노출한다.
- * 위/아래 첨자는 all-or-nothing — 모든 글자가 유니코드 첨자로 매핑될 때만 변환하고, 한 글자라도
- * 실패하면 `_{...}`/`^{...}` 형태로 남긴다.
+ * 폴백 정책: 유니코드로 매핑 불가능한 노드는 [MathNode.toLatex]로 원본 LaTeX를 그대로 노출한다. 위/아래 첨자는 all-or-nothing — 모든 글자가
+ * 유니코드 첨자로 매핑될 때만 변환하고, 한 글자라도 실패하면 `_{...}`/`^{...}` 형태로 남긴다.
  */
 internal object UnicodeMathRenderer {
     fun render(nodes: List<MathNode>): String = nodes.joinToString("") { render(it) }
@@ -60,7 +59,8 @@ internal object UnicodeMathRenderer {
         val map =
             when (node.command) {
                 "mathbb" -> LatexSymbols.MATHBB_MAP
-                "mathcal", "mathscr" -> LatexSymbols.MATHCAL_MAP
+                "mathcal",
+                "mathscr" -> LatexSymbols.MATHCAL_MAP
                 "mathfrak" -> LatexSymbols.MATHFRAK_MAP
                 else -> return content
             }
@@ -114,10 +114,7 @@ internal object UnicodeMathRenderer {
     }
 
     /** [s]의 모든 글자가 [map]에 있으면 치환 결과를, 한 글자라도 없으면 null을 반환한다. */
-    private fun mapAllOrNull(
-        s: String,
-        map: Map<Char, Char>,
-    ): String? {
+    private fun mapAllOrNull(s: String, map: Map<Char, Char>): String? {
         if (s.isEmpty()) return null
         val sb = StringBuilder(s.length)
         for (c in s) sb.append(map[c] ?: return null)

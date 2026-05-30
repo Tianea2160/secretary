@@ -10,12 +10,7 @@ class AssistantRunner(
     private val factory: AssistantAgentFactory,
     private val registry: SessionAgentRegistry,
 ) {
-    fun run(
-        chatId: Long,
-        sessionId: String,
-        prompt: String,
-        messageId: Int?,
-    ): String {
+    fun run(chatId: Long, sessionId: String, prompt: String, messageId: Int?): String {
         val agent = registry.getOrCreate(sessionId) { factory.create() }
         return runBlocking(ChatContext(chatId, sessionId, messageId)) {
             agent.run(prompt, sessionId)

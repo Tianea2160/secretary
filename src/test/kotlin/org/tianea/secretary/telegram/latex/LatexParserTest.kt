@@ -1,14 +1,15 @@
 package org.tianea.secretary.telegram.latex
 
-import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Test
 
 class LatexParserTest {
-    private fun parse(input: String): List<MathNode> = LatexParser(LatexLexer.tokenize(input)).parse()
+    private fun parse(input: String): List<MathNode> =
+        LatexParser(LatexLexer.tokenize(input)).parse()
 
     private fun single(input: String): MathNode {
         val nodes = parse(input)
@@ -90,7 +91,10 @@ class LatexParserTest {
 
     @Test
     fun pmatrixParsesIntoRowsAndCells() {
-        val env = assertIs<MathNode.Environment>(single("\\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix}"))
+        val env =
+            assertIs<MathNode.Environment>(
+                single("\\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix}")
+            )
         assertEquals("pmatrix", env.name)
         assertEquals(2, env.rows.size)
         assertEquals(2, env.rows[0].size)

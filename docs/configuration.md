@@ -6,11 +6,10 @@
 
 ## 환경변수
 
-`.env.example`에 정의된 5개 키:
+`.env.example`에 정의된 4개 키:
 
 | 이름 | 용도 |
 |---|---|
-| `GOOGLE_API_KEY` | Gemini 호출 키. Koog `AIAgent`와 Spring AI Google GenAI starter 양쪽이 같은 값을 공유한다 (`application.yaml`의 `spring.ai.google.genai.api-key: ${GOOGLE_API_KEY:}` 바인딩) |
 | `TELEGRAM_BOT_TOKEN` | Telegram Long Polling 봇 토큰. 비어 있으면 `SecretaryBot` 빈이 비활성화된다 (`@ConditionalOnExpression`) |
 | `TELEGRAM_ALLOWED_CHAT_IDS` | 응답 허용 chat ID 콤마 목록. `UpdateRouter.consume()`이 매 update마다 체크한다 |
 | `LANGFUSE_BASE_URL` | self-hosted Langfuse OTLP/HTTP 엔드포인트 (`http://localhost:3000` 기본) |
@@ -54,15 +53,11 @@ logging:
 spring:
   ai:
     model:
-      chat: ollama          # ollama | google-genai
+      chat: ollama          # 현재 ollama 고정
       embedding: ollama     # 현재 ollama 고정
-    google:
-      genai:
-        api-key: ${GOOGLE_API_KEY:}
-        chat.options.model: gemini-2.5-flash
     ollama:
       base-url: http://localhost:11434
-      chat.options.model: phi4-mini:latest
+      chat.options.model: qwen3:4b-instruct-2507-q4_K_M
       embedding.options.model: qwen3-embedding:8b     # 4096 차원 출력
       init.pull-model-strategy: when_missing
     vectorstore.pgvector:
@@ -117,9 +112,8 @@ telegram:
 
 ## 알려진 제약
 
-- **`GOOGLE_API_KEY`가 비어 있어도 컨텍스트 부팅은 성공한다.** `application.yaml:27`의 `${GOOGLE_API_KEY:}` 바인딩이 빈 문자열을 허용하기 때문. `spring.ai.model.chat=google-genai`로 전환하면 첫 호출 시 인증 오류로 실패한다.
+- **chat·embedding 모두 로컬 Ollama이므로 LLM API 키가 필요 없다.** `localhost:11434`에 `qwen3:4b-instruct-2507-q4_K_M`(chat)·`qwen3-embedding:8b`(embedding)가 떠 있어야 첫 호출이 성공한다. `spring.ai.model.{chat,embedding}=ollama`를 명시하지 않으면 provider 자동구성이 충돌한다.
 - **임베딩 모델 차원은 PgVector 스키마에 묶여 있다.** `qwen3-embedding:8b`(4096) 외 다른 모델로 바꾸면 `vector_store` 테이블의 `vector(4096)` 컬럼과 충돌한다. 모델 교체 시 기존 벡터 데이터를 비우고 재생성해야 한다.
-- **CLAUDE.md에 적힌 `GOOGLE_GENAI_API_KEY`는 더 이상 별도 키가 아니다.** 현재 yaml 바인딩은 `GOOGLE_API_KEY` 단일.
 
 ## 출처
 

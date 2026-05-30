@@ -33,11 +33,11 @@
 - `koog-spring-ai-starter-vector-store` → Spring AI `VectorStore` 빈을 받아 Koog `KoogVectorStore` 구현(`SpringAiKoogVectorStore`)으로 노출
 - `koog-spring-ai-starter-model-embedding` → Spring AI `EmbeddingModel` 빈을 받아 Koog `LLMEmbeddingProvider`로 노출 (현재는 PgVectorStore가 EmbeddingModel을 직접 쓰지만, Koog 측 다른 경로에서도 사용 가능하게 어댑팅)
 
-**Chat과 Embedding의 provider 분리**:
-- Chat: Google GenAI (`gemini-2.0-flash`)
+**Chat과 Embedding 모두 Ollama**:
+- Chat: Ollama (`qwen3:4b-instruct-2507-q4_K_M`)
 - Embedding: Ollama (`qwen3-embedding:8b`, host의 로컬 인스턴스)
 
-Ollama starter는 단일 모듈로 chat/embedding 양쪽 자동구성을 가지고 있어 명시 토글이 없으면 chat까지 활성화되어 Google chat과 빈 충돌(`ollamaChatModel`, `googleGenAiChatModel` 양립). 따라서 `spring.ai.model.chat=google-genai`, `spring.ai.model.embedding=ollama`를 명시한다.
+Spring AI 자동구성은 classpath의 provider를 `matchIfMissing=true`로 켜므로, 백엔드를 고정하려면 `spring.ai.model.chat=ollama`, `spring.ai.model.embedding=ollama`를 명시한다.
 
 ## 구현 요소
 
@@ -77,7 +77,7 @@ docker compose up -d
 spring:
   ai:
     model:
-      chat: google-genai                         # Ollama chat 자동활성화 차단 (matchIfMissing=true)
+      chat: ollama                               # provider 자동구성 고정 (matchIfMissing=true)
       embedding: ollama
     ollama:
       base-url: http://localhost:11434           # host의 로컬 Ollama
@@ -157,10 +157,10 @@ class AgentConfig {
 
 ### 3. Provider별 자동활성화 충돌 (`spring.ai.model.*` 명시 필수)
 
-Spring AI 1.x의 chat/embedding 자동구성은 모두 `@ConditionalOnProperty(name="spring.ai.model.{chat|embedding}", havingValue="<provider>", matchIfMissing=true)`. **명시 안 하면 classpath의 모든 provider가 자동 활성화**되어 `ChatModel` 빈이 둘 등록된다 (`ollamaChatModel`, `googleGenAiChatModel`). Koog의 `PromptExecutor` 빈이 어느 ChatModel을 쓸지 모호해져 컨텍스트 로드 실패. 본 프로젝트는 다음을 명시:
+Spring AI 1.x의 chat/embedding 자동구성은 모두 `@ConditionalOnProperty(name="spring.ai.model.{chat|embedding}", havingValue="<provider>", matchIfMissing=true)`. **명시 안 하면 classpath의 모든 provider가 자동 활성화**되어 같은 종류의 빈이 중복 등록될 수 있고, Koog의 `PromptExecutor`가 어느 `ChatModel`을 쓸지 모호해져 컨텍스트 로드가 실패한다. 현재는 Ollama starter 하나만 의존하지만, 백엔드를 명시적으로 고정하기 위해 다음을 둔다:
 
 ```yaml
-spring.ai.model.chat: google-genai
+spring.ai.model.chat: ollama
 spring.ai.model.embedding: ollama
 ```
 

@@ -1,13 +1,13 @@
 # Secretary
 
-Telegram 봇 인터페이스로 동작하는 AI 비서. Koog `AIAgent`와 Spring AI Google GenAI Starter를 함께 사용하는 듀얼 스택으로 Gemini / Ollama를 호출한다.
+Telegram 봇 인터페이스로 동작하는 AI 비서. Koog `AIAgent`(에이전트 워크플로)와 Spring AI(모델·메모리 인프라)를 계층으로 결합하며, chat·embedding 모두 로컬 Ollama로 호출한다.
 
 ## 사전 요구사항
 
 - JDK 25 (Gradle toolchain이 자동 프로비저닝, 로컬 설치 불필요)
 - Docker Desktop (Compose v2 이상)
+- [Ollama](https://ollama.com) — `localhost:11434`에 `qwen3:4b-instruct-2507-q4_K_M`(chat)·`qwen3-embedding:8b`(embedding) 필요
 - Telegram bot token — [@BotFather](https://t.me/BotFather)
-- Google API key — [Google AI Studio](https://aistudio.google.com/apikey)
 
 ## Quickstart
 
@@ -23,7 +23,6 @@ docker compose up -d                    # Postgres + Langfuse 스택 기동
 
 | 이름 | 용도 |
 |---|---|
-| `GOOGLE_API_KEY` | Gemini 호출 키. Koog와 Spring AI 양쪽이 공유한다 |
 | `TELEGRAM_BOT_TOKEN` | Telegram 봇 토큰 |
 | `TELEGRAM_ALLOWED_CHAT_IDS` | 응답 허용 chat ID 콤마 목록 |
 | `LANGFUSE_BASE_URL` / `LANGFUSE_PUBLIC_KEY` / `LANGFUSE_SECRET_KEY` | self-hosted Langfuse 트레이싱 (compose 기동 후 `http://localhost:3000`에서 키 발급) |

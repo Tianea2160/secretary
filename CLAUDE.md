@@ -4,16 +4,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Spring Boot 3.5 기반의 AI 비서(secretary) 애플리케이션. Kotlin 2.3 + JDK 25 toolchain으로 구성되어 있으며, **두 가지 AI 통합 방식이 공존**한다:
+Spring Boot 3.5 기반의 AI 비서(secretary) 애플리케이션. Kotlin 2.3 + JDK 25 toolchain으로 구성되어 있으며, **Koog Agents와 Spring AI 1.x를 계층으로 결합**한다:
 
-- **Koog Agents** (`ai.koog:koog-agents`) — `AssistantRunner` → `AssistantAgentFactory.create()`가 호출마다 새 `AIAgent`를 만들어 `ChatStrategyConfig`의 그래프 전략으로 실행
-- **Spring AI Google GenAI Starter** (`spring-ai-starter-model-google-genai`) — `application.yaml`로 설정된 자동 구성
+- **Koog Agents** (`ai.koog:koog-agents`) — `AssistantRunner` → `AssistantAgentFactory.create()`가 호출마다 새 `AIAgent`를 만들어 `ChatStrategyConfig`의 그래프 전략으로 실행. `PromptExecutor`는 `koog-spring-ai-starter-model-chat` 브릿지로 Spring AI `ChatModel`을 그대로 위임받는다.
+- **Spring AI** — chat·embedding·vector store·JDBC chat memory를 `application.yaml`로 자동 구성.
 
-두 경로가 같은 Gemini 모델 패밀리를 사용하지만 **설정 키와 모델명이 분리되어 있다**:
-- Koog: `GOOGLE_API_KEY` env + `Gemini2_5Flash` (코드 하드코딩)
-- Spring AI: `GOOGLE_GENAI_API_KEY` env + `gemini-2.0-flash` (yaml)
+chat·embedding 모두 **Ollama 단일 provider**다 (`spring.ai.model.chat: ollama`, `embedding: ollama`):
+- Chat: `qwen3:4b-instruct-2507-q4_K_M`
+- Embedding: `qwen3-embedding:8b` (4096차원)
 
-새 기능을 추가할 때는 둘 중 어느 경로에 통합할지 먼저 결정할 것. Spring 빈으로 주입받아 쓰는 일반 서비스 코드는 Spring AI 쪽이 자연스럽고, 에이전트 워크플로/툴 호출은 Koog 쪽이 적합하다.
+새 기능을 추가할 때는 어느 계층에 둘지 먼저 결정할 것. Spring 빈으로 주입받아 쓰는 일반 서비스 코드는 Spring AI 쪽이 자연스럽고, 에이전트 워크플로/툴 호출은 Koog 쪽이 적합하다. 자세한 결합 방침: `docs/koog-vs-spring-ai.md`.
 
 ## Common Commands
 
@@ -37,8 +37,8 @@ JDK 25 toolchain이 필수 (`.java-version`, `build.gradle.kts`). Gradle wrapper
 
 ## Known Pitfalls
 
-- `SecretaryApplication.kt:17`에 **하드코딩된 Google API 키 fallback**이 있음. 커밋 전에 노출 위험을 확인할 것 (`System.getenv("GOOGLE_API_KEY") ?: "AIza..."`).
-- Koog와 Spring AI가 **서로 다른 환경변수 이름**을 요구한다. 둘 다 사용하려면 `GOOGLE_API_KEY`와 `GOOGLE_GENAI_API_KEY`를 모두 설정해야 한다. 통일하려면 양쪽 모두를 수정해야 함.
+- **koog 버전 분리**: `koog-agents`(umbrella)는 `1.0.0` stable이지만 `koog-spring-ai-starter-*`와 `agents-features-longterm-memory`는 `1.0.0-beta`만 게시돼 있다. `libs.versions.toml`은 `koog`(stable) / `koog-beta` 두 키로 나눠 관리하며, LTM은 stable umbrella가 더 이상 transitive로 포함하지 않아 의존성으로 명시 선언한다. koog 버전을 올릴 때 두 키를 함께 확인할 것.
+- **Ollama 단일 provider**: chat·embedding 모두 Ollama이므로 `spring.ai.model.{chat,embedding}=ollama`를 명시해야 자동구성 충돌(provider 빈 중복)이 없다. host의 Ollama(`localhost:11434`)에 `qwen3:4b-instruct-2507-q4_K_M`·`qwen3-embedding:8b`가 떠 있어야 한다.
 
 ## Agent Runtime
 
@@ -50,7 +50,7 @@ feature의 span tree가 인스턴스 단위라 공유 시 race가 발생하기 �
   청사진이라 싱글턴으로 공유하고, `AIAgent`만 호출별로 만든다. DSL 치트시트: `docs/koog-strategy-graph.md`.
 - **호출별 데이터**: chatId·sessionId·messageId는 생성자 인자가 아니라 `ChatContext`(코루틴 컨텍스트 element)로
   전파된다. 그래프 노드·Koog 도구·`EventHandler` 핸들러 모두 `currentCoroutineContext()[ChatContext]`로 읽는다.
-- **Koog 0.8.0 API 확인**: 공식 문서가 얇을 때 `~/.gradle/caches/modules-2/files-2.1/ai.koog/`의 jar를
+- **Koog 1.0.0 API 확인**: 공식 문서가 얇을 때 `~/.gradle/caches/modules-2/files-2.1/ai.koog/`의 jar를
   `javap`로, `*-sources.jar`를 `unzip -p`로 열어 시그니처를 직접 검증한다.
 
 ## Tracing

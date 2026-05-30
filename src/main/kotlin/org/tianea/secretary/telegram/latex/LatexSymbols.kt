@@ -3,9 +3,8 @@ package org.tianea.secretary.telegram.latex
 /**
  * LaTeX 토큰 → 유니코드 매핑 테이블 모음.
  *
- * [UnicodeMathRenderer]가 참조하는 순수 데이터. LaTeX2e math, amsmath, Comprehensive LaTeX
- * Symbol List에서 LLM이 흔히 출력하는 범위를 추렸다. 완전한 LaTeX 심볼 집합은 아니며,
- * 미등록 토큰은 렌더러가 원본 LaTeX로 폴백한다.
+ * [UnicodeMathRenderer]가 참조하는 순수 데이터. LaTeX2e math, amsmath, Comprehensive LaTeX Symbol List에서 LLM이
+ * 흔히 출력하는 범위를 추렸다. 완전한 LaTeX 심볼 집합은 아니며, 미등록 토큰은 렌더러가 원본 LaTeX로 폴백한다.
  */
 internal object LatexSymbols {
     /** 인자 없는 `\command` → 유니코드 문자. 그리스 문자·연산자·관계자·화살표·집합/논리·기타. */
@@ -520,7 +519,16 @@ internal object LatexSymbols {
 
     /** `matrix` 계열 — 블록을 대괄호로 감싼다. */
     val BRACKETED_ENVIRONMENTS: Set<String> =
-        setOf("matrix", "pmatrix", "bmatrix", "Bmatrix", "vmatrix", "Vmatrix", "smallmatrix", "array")
+        setOf(
+            "matrix",
+            "pmatrix",
+            "bmatrix",
+            "Bmatrix",
+            "vmatrix",
+            "Vmatrix",
+            "smallmatrix",
+            "array",
+        )
 
     /** `\left`/`\right` 뒤에 오는 구분자 명령 → 유니코드 괄호. 평문 구분자(`( ) [ ]` 등)는 그대로 통과. */
     val DELIMITER_MAP: Map<String, String> =

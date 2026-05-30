@@ -3,13 +3,11 @@ package org.tianea.secretary.telegram.latex
 /**
  * [Token] 리스트를 [MathNode] AST로 변환하는 커서 기반 재귀 하강 파서.
  *
- * 중첩 중괄호는 호출 스택의 깊이로 자연히 처리된다([parseBracedGroup] ↔ [parseSequence] 재귀).
- * 비정상 입력(미닫힌 `{`, `\right`/`\end` 누락)에도 예외를 던지지 않고 best-effort로 파싱한다 —
- * 진입점 [LatexUnicodeRenderer]가 한 번 더 `runCatching`으로 감싸지만, 파서 자체도 관대해야 한다.
+ * 중첩 중괄호는 호출 스택의 깊이로 자연히 처리된다([parseBracedGroup] ↔ [parseSequence] 재귀). 비정상 입력(미닫힌 `{`,
+ * `\right`/`\end` 누락)에도 예외를 던지지 않고 best-effort로 파싱한다 — 진입점 [LatexUnicodeRenderer]가 한 번 더
+ * `runCatching`으로 감싸지만, 파서 자체도 관대해야 한다.
  */
-internal class LatexParser(
-    private val tokens: List<Token>,
-) {
+internal class LatexParser(private val tokens: List<Token>) {
     private var pos = 0
 
     fun parse(): List<MathNode> = parseSequence(Stop.TOP)
@@ -48,22 +46,22 @@ internal class LatexParser(
         return nodes
     }
 
-    private fun isTerminator(
-        t: Token,
-        stop: Stop,
-    ): Boolean =
+    private fun isTerminator(t: Token, stop: Stop): Boolean =
         when (stop) {
             Stop.TOP -> false
             Stop.GROUP -> t is Token.RBrace
-            Stop.CELL -> t is Token.Ampersand || t is Token.RowBreak || t is Token.RBrace || isCommand(t, "end")
+            Stop.CELL ->
+                t is Token.Ampersand ||
+                    t is Token.RowBreak ||
+                    t is Token.RBrace ||
+                    isCommand(t, "end")
             Stop.DELIM -> isCommand(t, "right")
         }
 
     /**
      * `^`/`_`의 base가 될 직전 노드를 [nodes]에서 떼어낸다.
      *
-     * 직전 노드가 다중 문자 [MathNode.Symbol]이면 마지막 한 글자만 base로 분리한다 — `abc^2`에서
-     * `^`는 `c`에만 결합하기 때문.
+     * 직전 노드가 다중 문자 [MathNode.Symbol]이면 마지막 한 글자만 base로 분리한다 — `abc^2`에서 `^`는 `c`에만 결합하기 때문.
      */
     private fun detachBase(nodes: MutableList<MathNode>): MathNode? {
         if (nodes.isEmpty()) return null
@@ -78,7 +76,9 @@ internal class LatexParser(
     private fun parseScript(base: MathNode?): MathNode {
         var sup: MathNode? = null
         var sub: MathNode? = null
-        while (pos < tokens.size && (tokens[pos] is Token.Caret || tokens[pos] is Token.Underscore)) {
+        while (
+            pos < tokens.size && (tokens[pos] is Token.Caret || tokens[pos] is Token.Underscore)
+        ) {
             val isSup = tokens[pos] is Token.Caret
             pos++
             val arg = parseArgument()
@@ -112,7 +112,8 @@ internal class LatexParser(
                 MathNode.Symbol("\n")
             }
 
-            is Token.Caret, is Token.Underscore -> {
+            is Token.Caret,
+            is Token.Underscore -> {
                 pos++
                 MathNode.Script(null, null, null)
             }
@@ -140,8 +141,8 @@ internal class LatexParser(
     /**
      * `\frac`의 분자, `^`/`_`의 인자 등 "명령 인자 하나"를 파싱한다.
      *
-     * 다음 토큰이 `{`면 그룹(중괄호는 구조적으로 소비, content-only [MathNode.Group] 반환),
-     * 명령이면 그 명령 원자 하나, 문자면 단 한 글자. 선행 공백은 건너뛴다.
+     * 다음 토큰이 `{`면 그룹(중괄호는 구조적으로 소비, content-only [MathNode.Group] 반환), 명령이면 그 명령 원자 하나, 문자면 단 한 글자.
+     * 선행 공백은 건너뛴다.
      */
     private fun parseArgument(): MathNode {
         skipSpaces()
@@ -225,7 +226,9 @@ internal class LatexParser(
     private fun parseBigOperator(name: String): MathNode {
         var lower: MathNode? = null
         var upper: MathNode? = null
-        while (pos < tokens.size && (tokens[pos] is Token.Caret || tokens[pos] is Token.Underscore)) {
+        while (
+            pos < tokens.size && (tokens[pos] is Token.Caret || tokens[pos] is Token.Underscore)
+        ) {
             val isUpper = tokens[pos] is Token.Caret
             pos++
             val arg = parseArgument()
@@ -388,8 +391,5 @@ internal class LatexParser(
         }
     }
 
-    private fun isCommand(
-        t: Token,
-        name: String,
-    ): Boolean = t is Token.Command && t.name == name
+    private fun isCommand(t: Token, name: String): Boolean = t is Token.Command && t.name == name
 }

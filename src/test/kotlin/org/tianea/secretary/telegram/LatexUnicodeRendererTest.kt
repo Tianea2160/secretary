@@ -1,9 +1,9 @@
 package org.tianea.secretary.telegram
 
-import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import org.junit.jupiter.api.Test
 
 class LatexUnicodeRendererTest {
     private val renderer = LatexUnicodeRenderer()
@@ -97,7 +97,7 @@ class LatexUnicodeRendererTest {
     fun eulerLagrangeScreenshotFlattensEndToEnd() {
         val out =
             renderer.render(
-                $$"""오일러-라그랑주: $\frac{\partial L}{\partial q} - \frac{d}{dt}\frac{\partial L}{\partial \dot{q}} = 0$""",
+                $$"""오일러-라그랑주: $\frac{\partial L}{\partial q} - \frac{d}{dt}\frac{\partial L}{\partial \dot{q}} = 0$"""
             )
         assertFalse(out.contains("\\frac"), "actual=$out")
         assertFalse(out.contains("$"), "actual=$out")
@@ -110,7 +110,7 @@ class LatexUnicodeRendererTest {
         val out =
             renderer.render(
                 $$"""$\rho\left(\frac{\partial \mathbf{v}}{\partial t} + \mathbf{v}\cdot\nabla\mathbf{v}\right) """ +
-                    $$"""= -\nabla p + \mu\nabla^2\mathbf{v} + \mathbf{f}$""",
+                    $$"""= -\nabla p + \mu\nabla^2\mathbf{v} + \mathbf{f}$"""
             )
         assertFalse(out.contains("\\mathbf"), "actual=$out")
         assertFalse(out.contains("\\left"), "actual=$out")

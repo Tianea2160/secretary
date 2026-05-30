@@ -15,8 +15,8 @@ import org.tianea.secretary.telegram.TelegramMessageSender
 /**
  * 텔레그램 메시지 큐를 폴링해 슬래시 커맨드 또는 AI Agent로 라우팅한다.
  *
- * `@DisallowConcurrentExecution` — 동일 `JobDetail`의 동시 실행을 차단한다. 1초 cron 주기에서
- * 직전 실행이 1초보다 오래 걸리면 다음 트리거가 스킵되어 중복 처리를 막는다.
+ * `@DisallowConcurrentExecution` — 동일 `JobDetail`의 동시 실행을 차단한다. 1초 cron 주기에서 직전 실행이 1초보다 오래 걸리면 다음
+ * 트리거가 스킵되어 중복 처리를 막는다.
  *
  * @see AgentExecutionJobConfig `JobDetail`/`Trigger` 빈 등록 위치
  */
@@ -43,11 +43,7 @@ class AgentExecutionJob(
             .onFailure { log.error("update handling failed chat_id={}", chatId, it) }
     }
 
-    private fun handle(
-        chatId: Long,
-        text: String,
-        messageId: Int,
-    ) {
+    private fun handle(chatId: Long, text: String, messageId: Int) {
         log.debug("Incoming chat_id={} text=\"{}\"", chatId, text)
         val replies: List<String> =
             if (text.startsWith("/")) {
