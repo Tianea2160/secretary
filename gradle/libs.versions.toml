@@ -10,7 +10,7 @@ hypersistence-tsid = "2.1.4"
 ktfmt = "0.26.0"
 commonmark = "0.28.0"
 kotlinx-serialization = "1.11.0"
-hibernate = "6.6.49.Final"
+hibernate = "6.6.52.Final"
 
 [libraries]
 spring-ai-bom = { module = "org.springframework.ai:spring-ai-bom", version.ref = "spring-ai" }
