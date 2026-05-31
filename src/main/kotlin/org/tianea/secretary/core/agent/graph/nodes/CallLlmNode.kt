@@ -4,6 +4,7 @@ import ai.koog.agents.core.dsl.builder.AIAgentNodeDelegate
 import ai.koog.agents.core.dsl.builder.node
 import ai.koog.prompt.message.Message
 import ai.koog.prompt.message.MessagePart
+import org.slf4j.Logger
 
 /**
  * `callLLM` → `touchKnowHow` 간 데이터 캐리어.
@@ -27,7 +28,7 @@ data class LlmCallResult(val response: Message.Assistant, val adoptedIds: List<S
  * `llm.writeSession` 등은 `node { }` 람다 receiver(`AIAgentGraphContextBase`)에서 제공되므로 추가 의존성 없이 factory
  * 함수로 노출한다.
  */
-fun callLlmNodeDelegate(): AIAgentNodeDelegate<KnowHowWithInput, LlmCallResult> =
+fun callLlmNodeDelegate(log: Logger): AIAgentNodeDelegate<KnowHowWithInput, LlmCallResult> =
     node("callLLM") { carrier ->
         llm.writeSession {
             val knowHowBlock = carrier.knowHowBlock
@@ -40,6 +41,7 @@ fun callLlmNodeDelegate(): AIAgentNodeDelegate<KnowHowWithInput, LlmCallResult> 
             appendPrompt { user("$knowHowBlock\n\n${carrier.originalInput}") }
 
             val response = requestLLM()
+            log.trace("CallLLM response: {}", response)
 
             rewritePrompt { currentPrompt ->
                 val messages = currentPrompt.messages.toMutableList()

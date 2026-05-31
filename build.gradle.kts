@@ -65,9 +65,30 @@ val enableNativeAccess = "--enable-native-access=ALL-UNNAMED"
 val maxRamPercentage = "-XX:MaxRAMPercentage=60.0"
 val unsafeAllow = "--sun-misc-unsafe-memory-access=allow"
 
+/**
+ * `.env` 파일을 파싱해 key-value 맵으로 반환한다.
+ *
+ * `@EnabledIfEnvironmentVariable`·`System.getenv()`는 실제 프로세스 환경변수만 읽고 `.env`를 자동 로드하지 않으므로, 테스트
+ * JVM에 직접 주입하기 위해 사용한다. 빈 줄·`#` 주석은 건너뛰고, `=` 기준으로 한 번만 분리하며, 값을 감싼 따옴표(`"`/`'`)는 제거한다.
+ *
+ * @return `.env`가 없으면 빈 맵
+ */
+fun loadEnv(): Map<String, String> =
+    file(".env")
+        .takeIf { it.exists() }
+        ?.readLines()
+        ?.map { it.trim() }
+        ?.filter { it.isNotEmpty() && !it.startsWith("#") && "=" in it }
+        ?.associate { line ->
+            val (key, value) = line.split("=", limit = 2)
+            key.trim() to value.trim().removeSurrounding("\"").removeSurrounding("'")
+        }
+        .orEmpty()
+
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
     maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
+    environment(loadEnv())
 }
 
 tasks.withType<JavaExec>().configureEach {

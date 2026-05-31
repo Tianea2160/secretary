@@ -31,3 +31,25 @@ items:
     input: "If a train travels 60 km in 45 minutes, what is its average speed in km/h?"
     referenceAnswer: "80 km/h. (60 km in 0.75 hours = 60 / 0.75 = 80 km/h.)"
     tags: [reasoning, math]
+
+  # 아래 항목들은 정답에 2개 이상의 필수 요소가 있어, 일부만 답하면 부분 점수(3~4)로 떨어진다.
+  # 트리비아처럼 천장(5점)에 몰리지 않게 해 회귀 시 평균이 실제로 내려가도록 변별력을 만든다.
+  - id: additive-primary-colors
+    input: "What are the three primary colors of light in additive color mixing?"
+    referenceAnswer: "Red, green, and blue. (All three are required.)"
+    tags: [factual, science, completeness]
+
+  - id: rectangle-area-and-perimeter
+    input: "A rectangle measures 7 cm by 3 cm. What are both its area and its perimeter?"
+    referenceAnswer: "Area is 21 cm² (7 × 3) and perimeter is 20 cm (2 × (7 + 3)). Both values are required."
+    tags: [reasoning, math, completeness]
+
+  - id: http-404-vs-500
+    input: "In HTTP, what does a 404 status code mean, and separately, what does a 500 status code mean?"
+    referenceAnswer: "404 means Not Found — the requested resource does not exist on the server. 500 means Internal Server Error — the server hit an unexpected condition. Both meanings are required."
+    tags: [factual, web, completeness]
+
+  - id: stack-vs-queue-ordering
+    input: "What is the difference in element ordering between a stack and a queue?"
+    referenceAnswer: "A stack is LIFO (last-in, first-out); a queue is FIFO (first-in, first-out). Both orderings must be stated and correctly matched."
+    tags: [factual, cs, completeness]

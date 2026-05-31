@@ -1,16 +1,14 @@
 package org.tianea.secretary.eval
 
-import ai.koog.prompt.executor.model.PromptExecutor
-import ai.koog.prompt.llm.LLModel
 import io.hypersistence.tsid.TSID
 import java.time.Instant
 import java.util.UUID
 import kotlin.test.assertTrue
-import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
 import org.tianea.secretary.core.agent.AssistantRunner
 
@@ -32,9 +30,9 @@ import org.tianea.secretary.core.agent.AssistantRunner
 class RegressionEvalTest {
     @Autowired private lateinit var runner: AssistantRunner
 
-    @Autowired private lateinit var promptExecutor: PromptExecutor
+    @Value("\${spring.ai.ollama.base-url}") private lateinit var ollamaBaseUrl: String
 
-    @Autowired private lateinit var llmModel: LLModel
+    @Value("\${spring.ai.ollama.chat.options.model}") private lateinit var judgeModel: String
 
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -48,7 +46,9 @@ class RegressionEvalTest {
 
         val dataset = EvalDatasetLoader.load()
         val langfuse = LangfuseClient.create(baseUrl, publicKey, secretKey)
-        val judge = EvalJudge(promptExecutor, llmModel)
+        val judge = EvalJudge(OllamaChatClient.create(ollamaBaseUrl), judgeModel)
+
+        assertJudgeDiscriminates(judge)
 
         langfuse.createDataset(
             CreateDatasetRequest(name = DATASET_NAME, description = "Secretary regression eval set")
@@ -68,7 +68,7 @@ class RegressionEvalTest {
 
             val sessionId = TSID.fast().toString()
             val output = runner.run(EVAL_CHAT_ID, sessionId, item.input, null)
-            val verdict = runBlocking { judge.judge(item.input, item.referenceAnswer, output) }
+            val verdict = judge.judge(item.input, item.referenceAnswer, output)
             scores += verdict.score
             log.info("[eval] {} score={} :: {}", item.id, verdict.score, verdict.reasoning)
 
@@ -152,6 +152,27 @@ class RegressionEvalTest {
         )
     }
 
+    /**
+     * judge가 정답과 오답을 실제로 구분하는지 매 실행마다 검증하는 음성 대조군(negative control).
+     *
+     * 데이터셋 점수가 거의 1.0에 몰려 있어, judge가 망가지거나(logprobs 경로 변경, 모델 회귀) 항상 만점을 주는 상태가 되면 회귀 게이트는 헛되이
+     * 통과한다. 명백히 틀린 답을 채점시켜 점수가 [SANITY_WRONG_MAX] 이하로 떨어지지 않으면 게이트 자체가 무의미하다고 보고 실패시킨다.
+     */
+    private fun assertJudgeDiscriminates(judge: EvalJudge) {
+        val verdict = judge.judge(SANITY_QUESTION, SANITY_REFERENCE, SANITY_WRONG_ANSWER)
+        log.info(
+            "[eval] judge sanity (deliberately wrong) score={} :: {}",
+            verdict.score,
+            verdict.reasoning,
+        )
+        assertTrue(
+            verdict.score <= SANITY_WRONG_MAX,
+            "Judge sanity check failed: a deliberately wrong answer scored ${verdict.score} " +
+                "(> $SANITY_WRONG_MAX). The judge cannot distinguish wrong answers, so the regression " +
+                "gate would pass vacuously. Verify the judge model and logprobs path before trusting scores.",
+        )
+    }
+
     private fun requireEnv(name: String): String =
         System.getenv(name) ?: error("$name must be set to run the regression eval")
 
@@ -163,5 +184,10 @@ class RegressionEvalTest {
         const val SCORE_NAME = "correctness"
         const val DEFAULT_THRESHOLD = 0.7
         const val EVAL_CHAT_ID = 0L
+
+        const val SANITY_QUESTION = "What is the capital of France?"
+        const val SANITY_REFERENCE = "The capital of France is Paris."
+        const val SANITY_WRONG_ANSWER = "The capital of France is Berlin."
+        const val SANITY_WRONG_MAX = 0.3
     }
 }

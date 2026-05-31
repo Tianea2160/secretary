@@ -2,6 +2,7 @@ package org.tianea.secretary.core.agent.graph
 
 import ai.koog.agents.core.agent.entity.AIAgentGraphStrategy
 import ai.koog.agents.core.dsl.builder.strategy
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -31,6 +32,8 @@ import org.tianea.secretary.telegram.TelegramReactionSender
  */
 @Configuration
 class ChatStrategyConfig {
+    private val log = LoggerFactory.getLogger(javaClass)
+
     /**
      * 그래프 모양: `nodeStart → reactStart → preprocess → retrieveKnowHow → callLLM → touchKnowHow →
      * emitText → reflect → consolidate → reactEnd → nodeFinish`
@@ -63,7 +66,7 @@ class ChatStrategyConfig {
             val preprocess by preprocessNodeDelegate()
             val retrieveKnowHow by
                 retrieveKnowHowNodeDelegate(knowHowStore, enabled, topK, tokenBudget)
-            val callLLM by callLlmNodeDelegate()
+            val callLLM by callLlmNodeDelegate(log)
             val touchKnowHow by touchKnowHowNodeDelegate(knowHowStore)
             val emitText by emitTextNodeDelegate()
             val reflect by reflectNodeDelegate(knowHowReflector, enabled)
