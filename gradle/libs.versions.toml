@@ -1,5 +1,5 @@
 [versions]
-kotlin = "2.3.21"
+kotlin = "2.4.0"
 spring-boot = "3.5.14"
 dependency-management = "1.1.7"
 spring-ai = "1.1.7"
