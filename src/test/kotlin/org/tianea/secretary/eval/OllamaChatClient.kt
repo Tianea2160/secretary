@@ -51,8 +51,8 @@ interface OllamaChatClient {
 }
 
 /**
- * `/api/chat` 요청. score 토큰만 필요하므로 [options]의 `num_predict`를 작게 두고, [topLogprobs]로 점수 분포의 후보 개수를 넉넉히
- * 받는다(전체폭 숫자·공백 변형 등 비점수 토큰이 끼어도 1~5가 모두 포함되도록).
+ * `/api/chat` 요청. score 토큰만 필요하므로 [options]의 `num_predict`를 작게 두고, `logprobs`로 생성 토큰 텍스트를
+ * 받는다(judge는 그 토큰에서 첫 1~5 점수를 읽는다).
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class OllamaChatRequest(
@@ -60,7 +60,6 @@ data class OllamaChatRequest(
     val messages: List<OllamaMessage>,
     val stream: Boolean = false,
     val logprobs: Boolean = true,
-    @JsonProperty("top_logprobs") val topLogprobs: Int = 20,
     val options: OllamaOptions = OllamaOptions(),
 )
 
@@ -70,22 +69,13 @@ data class OllamaMessage(val role: String, val content: String)
 data class OllamaOptions(
     @JsonProperty("num_predict") val numPredict: Int = 4,
     val temperature: Double = 0.0,
+    @JsonProperty("seed") val seed: Int? = null,
 )
 
-/**
- * `/api/chat` 응답. [logprobs]는 생성된 토큰마다 한 항목이며, 각 항목의 [OllamaTokenLogprobs.topLogprobs]가 그 위치에서의 상위
- * 후보 분포다.
- */
+/** `/api/chat` 응답. [logprobs]는 생성된 토큰마다 한 항목이며, judge는 그 토큰 텍스트에서 첫 1~5 점수를 읽는다. */
 data class OllamaChatResponse(
     val message: OllamaMessage,
     val logprobs: List<OllamaTokenLogprobs> = emptyList(),
 )
 
-data class OllamaTokenLogprobs(
-    val token: String,
-    val logprob: Double,
-    @JsonProperty("top_logprobs") val topLogprobs: List<OllamaTopLogprob> = emptyList(),
-)
-
-/** 한 토큰 위치의 후보. [logprob]은 자연로그 확률(≤0). 확률은 `exp(logprob)`. */
-data class OllamaTopLogprob(val token: String, val logprob: Double)
+data class OllamaTokenLogprobs(val token: String, val logprob: Double)

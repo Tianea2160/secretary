@@ -95,7 +95,7 @@ data class IngestionRequest(val batch: List<IngestionEvent>)
 /**
  * ingestion 배치의 단위 이벤트.
  *
- * @property id 이벤트 멱등 키(UUID). trace/score body의 id와는 별개.
+ * @property id 이벤트 멱등 키(TSID). trace/score body의 id와는 별개.
  * @property type `"trace-create"` 또는 `"score-create"`.
  * @property timestamp ISO-8601(밀리초 이상).
  * @property body [TraceBody] 또는 [ScoreBody].
