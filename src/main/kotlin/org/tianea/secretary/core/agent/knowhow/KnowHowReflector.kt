@@ -90,9 +90,12 @@ class KnowHowReflector(
             Procedural know-how is a methodology of the form "in this kind of situation, this approach works".
             - Extract only **procedures or approaches that will remain useful in the future** — not raw facts or personal user preferences.
             - Each candidate must be independently understandable.
-            - If this turn yields nothing worth extracting, return an empty candidates list.
 
-            For each candidate:
+            Output shape (MANDATORY):
+            - Always return a single JSON **object** with one key `candidates` whose value is the array of extracted candidates.
+            - Never output a bare array. Even when there is nothing to extract, return `{"candidates": []}`, not `[]`.
+
+            For each candidate inside the `candidates` array:
             - `intent`: a one-line summary of "when/in what situation this know-how applies" (match the conversation language, ≤ 50 chars)
             - `body`: the concrete procedure or methodology (match the conversation language, ≤ 500 chars)
             - `importance`: future reusability of this know-how (real number 0.0–1.0)
