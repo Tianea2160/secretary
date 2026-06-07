@@ -14,6 +14,7 @@ class KnowHowStoreTest {
             mock(KnowHowRepository::class.java),
             mock(EmbeddingModel::class.java),
             mock(EntityManager::class.java),
+            KnowHowProperties(),
         )
 
     private fun makeKnowHow(
@@ -22,6 +23,7 @@ class KnowHowStoreTest {
         lastUsedAt: Instant? = null,
         createdAt: Instant = Instant.now(),
         body: String = "some procedure",
+        useCount: Int = 0,
     ): KnowHow =
         KnowHow(
             id = id,
@@ -29,12 +31,61 @@ class KnowHowStoreTest {
             intent = "test intent",
             body = body,
             importance = importance,
-            useCount = 0,
+            useCount = useCount,
             createdAt = createdAt,
             updatedAt = createdAt,
             lastUsedAt = lastUsedAt,
             sourceSessionId = "session-1",
         )
+
+    @Test
+    fun rerankRewardsHigherUseCount() {
+        val sharedLastUsed = Instant.now().minusSeconds(3600L)
+        val lowUse =
+            ScoredKnowHow(
+                knowHow = makeKnowHow(id = "low-use", useCount = 0, lastUsedAt = sharedLastUsed),
+                similarity = 0.9,
+            )
+        val highUse =
+            ScoredKnowHow(
+                knowHow = makeKnowHow(id = "high-use", useCount = 50, lastUsedAt = sharedLastUsed),
+                similarity = 0.9,
+            )
+
+        val lowScore = store.rerank(listOf(lowUse)).first().rerankScore
+        val highScore = store.rerank(listOf(highUse)).first().rerankScore
+
+        assertTrue(highScore > lowScore, "frequency 가중치가 적용되면 use_count가 큰 노하우의 점수가 더 높아야 한다")
+    }
+
+    @Test
+    fun rerankComputesWeightedSumOfAllFourFactors() {
+        val now = Instant.now()
+        val weighted =
+            KnowHowStore(
+                mock(KnowHowRepository::class.java),
+                mock(EmbeddingModel::class.java),
+                mock(EntityManager::class.java),
+                KnowHowProperties(
+                    rerank =
+                        KnowHowProperties.Rerank(
+                            weightSimilarity = 0.4,
+                            weightRecency = 0.3,
+                            weightImportance = 0.2,
+                            weightFrequency = 0.1,
+                            frequencySaturationK = 5.0,
+                            halfLifeHours = 72.0,
+                        )
+                ),
+            )
+        val knowHow = makeKnowHow(importance = 0.8, useCount = 15, lastUsedAt = now)
+        val scored = ScoredKnowHow(knowHow = knowHow, similarity = 0.6)
+
+        val rerankScore = weighted.rerank(listOf(scored)).first().rerankScore
+
+        val expected = 0.4 * 0.6 + 0.3 * 1.0 + 0.2 * 0.8 + 0.1 * (15.0 / (15.0 + 5.0))
+        assertEquals(expected, rerankScore, 1e-3)
+    }
 
     @Test
     fun rerankAssignsHigherScoreToRecentItems() {

@@ -6,6 +6,7 @@ import kotlin.test.assertEquals
 import org.mockito.Mockito.mock
 import org.springframework.ai.embedding.EmbeddingModel
 import org.tianea.secretary.core.agent.knowhow.KnowHowConsolidator
+import org.tianea.secretary.core.agent.knowhow.KnowHowProperties
 import org.tianea.secretary.core.agent.knowhow.KnowHowReflector
 import org.tianea.secretary.core.agent.knowhow.KnowHowRepository
 import org.tianea.secretary.core.agent.knowhow.KnowHowStore
@@ -18,6 +19,7 @@ class ChatStrategyTest {
             mock(KnowHowRepository::class.java),
             mock(EmbeddingModel::class.java),
             mock(EntityManager::class.java),
+            KnowHowProperties(),
         )
     private val knowHowReflector = mock(KnowHowReflector::class.java)
     private val knowHowConsolidator = mock(KnowHowConsolidator::class.java)
@@ -31,9 +33,7 @@ class ChatStrategyTest {
                     knowHowStore = knowHowStore,
                     knowHowReflector = knowHowReflector,
                     knowHowConsolidator = knowHowConsolidator,
-                    enabled = true,
-                    topK = 5,
-                    tokenBudget = 1200,
+                    knowHowProperties = KnowHowProperties(),
                 )
         assertEquals("secretary-chat", strategy.name)
     }
@@ -47,9 +47,7 @@ class ChatStrategyTest {
                     knowHowStore = knowHowStore,
                     knowHowReflector = knowHowReflector,
                     knowHowConsolidator = knowHowConsolidator,
-                    enabled = false,
-                    topK = 5,
-                    tokenBudget = 1200,
+                    knowHowProperties = KnowHowProperties(enabled = false),
                 )
         assertEquals("secretary-chat", strategy.name)
     }

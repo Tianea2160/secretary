@@ -3,7 +3,6 @@ package org.tianea.secretary.core.agent.graph
 import ai.koog.agents.core.agent.entity.AIAgentGraphStrategy
 import ai.koog.agents.core.dsl.builder.strategy
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.tianea.secretary.core.agent.graph.nodes.callLlmNodeDelegate
@@ -16,6 +15,7 @@ import org.tianea.secretary.core.agent.graph.nodes.reflectNodeDelegate
 import org.tianea.secretary.core.agent.graph.nodes.retrieveKnowHowNodeDelegate
 import org.tianea.secretary.core.agent.graph.nodes.touchKnowHowNodeDelegate
 import org.tianea.secretary.core.agent.knowhow.KnowHowConsolidator
+import org.tianea.secretary.core.agent.knowhow.KnowHowProperties
 import org.tianea.secretary.core.agent.knowhow.KnowHowReflector
 import org.tianea.secretary.core.agent.knowhow.KnowHowStore
 import org.tianea.secretary.core.scheduling.ChatContext
@@ -57,11 +57,12 @@ class ChatStrategyConfig {
         knowHowStore: KnowHowStore,
         knowHowReflector: KnowHowReflector,
         knowHowConsolidator: KnowHowConsolidator,
-        @Value($$"${know-how.enabled}") enabled: Boolean,
-        @Value($$"${know-how.retrieval.top-k}") topK: Int,
-        @Value($$"${know-how.retrieval.token-budget}") tokenBudget: Int,
-    ): AIAgentGraphStrategy<String, String> =
-        strategy("secretary-chat") {
+        knowHowProperties: KnowHowProperties,
+    ): AIAgentGraphStrategy<String, String> {
+        val enabled = knowHowProperties.enabled
+        val topK = knowHowProperties.retrieval.topK
+        val tokenBudget = knowHowProperties.retrieval.tokenBudget
+        return strategy("secretary-chat") {
             val reactStart by reactStartNodeDelegate(reactionSender)
             val preprocess by preprocessNodeDelegate()
             val retrieveKnowHow by
@@ -84,4 +85,5 @@ class ChatStrategyConfig {
             edge(consolidate forwardTo reactEnd)
             edge(reactEnd forwardTo nodeFinish)
         }
+    }
 }

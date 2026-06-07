@@ -2,12 +2,12 @@ package org.tianea.secretary.core.agent.knowhow
 
 import ai.koog.prompt.dsl.prompt
 import ai.koog.prompt.executor.model.PromptExecutor
-import ai.koog.prompt.executor.model.StructureFixingParser
-import ai.koog.prompt.executor.model.executeStructured
 import ai.koog.prompt.llm.LLModel
+import com.fasterxml.jackson.databind.ObjectMapper
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.Serializable
 import org.slf4j.LoggerFactory
+import org.springframework.ai.converter.BeanOutputConverter
 
 /**
  * 이번 대화 턴(사용자 입력 + 어시스턴트 응답)에서 재사용 가능한 절차적 노하우 후보를 추출한다.
@@ -17,13 +17,18 @@ import org.slf4j.LoggerFactory
  * @param promptExecutor Koog `PromptExecutor` — 독립 LLM 호출에 사용.
  * @param model 호출에 사용할 LLM 모델.
  * @param minImportance 이 값 미만의 [KnowHowCandidate.importance] 후보는 결과에서 제외된다.
+ * @param objectMapper Kotlin 모듈이 등록된 애플리케이션 [ObjectMapper] 빈 — 구조화 출력 스키마 생성·파싱에 사용.
  */
 class KnowHowReflector(
     private val promptExecutor: PromptExecutor,
     private val model: LLModel,
     private val minImportance: Double,
+    objectMapper: ObjectMapper,
 ) {
     private val log = LoggerFactory.getLogger(KnowHowReflector::class.java)
+
+    /** [ReflectResponse] 타입에서 JSON 스키마·포맷 지시문을 자동 생성하고 응답을 파싱하는 Spring AI 구조화 출력 변환기. */
+    private val outputConverter = BeanOutputConverter(ReflectResponse::class.java, objectMapper)
 
     /**
      * 이번 턴의 대화를 분석해 재사용 가능한 절차적 노하우 후보 목록을 반환한다.
@@ -45,7 +50,7 @@ class KnowHowReflector(
         return runCatching {
                 val extractionPrompt =
                     prompt("know-how-reflect") {
-                        system(REFLECT_SYSTEM_PROMPT)
+                        system(REFLECT_SYSTEM_PROMPT + "\n\n" + outputConverter.format)
                         user(
                             buildString {
                                 appendLine("## User input")
@@ -59,30 +64,16 @@ class KnowHowReflector(
                         )
                     }
 
-                val result =
-                    promptExecutor.executeStructured<ReflectResponse>(
-                        prompt = extractionPrompt,
-                        model = model,
-                        fixingParser =
-                            StructureFixingParser(model = model, retries = STRUCTURE_FIX_RETRIES),
-                    )
-
-                val structuredResponse = result.getOrElse { error ->
-                    if (error is CancellationException) throw error
-                    log.warn(
-                        "노하우 추출 구조화 파싱 실패 [chatId={}, session={}]: {}",
-                        chatId,
-                        sourceSessionId,
-                        error.message,
-                    )
-                    return emptyList()
+                val responseText =
+                    promptExecutor.execute(extractionPrompt, model, emptyList()).textContent()
+                outputConverter.convert(responseText).candidates.filter {
+                    it.importance >= minImportance
                 }
-                structuredResponse.data.candidates.filter { it.importance >= minImportance }
             }
             .getOrElse { error ->
                 if (error is CancellationException) throw error
                 log.warn(
-                    "노하우 추출 LLM 호출 실패 [chatId={}, session={}]: {}",
+                    "노하우 추출 실패 [chatId={}, session={}]: {}",
                     chatId,
                     sourceSessionId,
                     error.message,
@@ -92,9 +83,6 @@ class KnowHowReflector(
     }
 
     private companion object {
-        /** 구조화 응답 파싱 실패 시 보조 LLM으로 교정을 시도하는 최대 재시도 횟수. */
-        const val STRUCTURE_FIX_RETRIES = 2
-
         val REFLECT_SYSTEM_PROMPT =
             """
             You are an expert at extracting **reusable procedural know-how** from conversations.

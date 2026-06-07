@@ -2,14 +2,14 @@ package org.tianea.secretary.core.agent.knowhow
 
 import ai.koog.prompt.dsl.prompt
 import ai.koog.prompt.executor.model.PromptExecutor
-import ai.koog.prompt.executor.model.StructureFixingParser
-import ai.koog.prompt.executor.model.executeStructured
 import ai.koog.prompt.llm.LLModel
+import com.fasterxml.jackson.databind.ObjectMapper
 import io.hypersistence.tsid.TSID
 import java.time.Instant
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.Serializable
 import org.slf4j.LoggerFactory
+import org.springframework.ai.converter.BeanOutputConverter
 
 /**
  * 노하우 후보 목록을 기존 저장소와 비교해 ADD / UPDATE / SKIP 판정 후 반영한다.
@@ -24,13 +24,19 @@ import org.slf4j.LoggerFactory
  * @param promptExecutor Koog `PromptExecutor` — 독립 LLM 호출에 사용.
  * @param model 호출에 사용할 LLM 모델.
  * @param store 노하우 저장소 — 유사도 검색·저장·갱신에 사용.
+ * @param objectMapper Kotlin 모듈이 등록된 애플리케이션 [ObjectMapper] 빈 — 구조화 출력 스키마 생성·파싱에 사용.
  */
 class KnowHowConsolidator(
     private val promptExecutor: PromptExecutor,
     private val model: LLModel,
     private val store: KnowHowStore,
+    objectMapper: ObjectMapper,
 ) {
     private val log = LoggerFactory.getLogger(KnowHowConsolidator::class.java)
+
+    /** [ConsolidationVerdict] 타입에서 JSON 스키마·포맷 지시문을 자동 생성하고 응답을 파싱하는 Spring AI 구조화 출력 변환기. */
+    private val verdictConverter =
+        BeanOutputConverter(ConsolidationVerdict::class.java, objectMapper)
 
     /**
      * 후보 목록 각각에 대해 ADD/UPDATE/SKIP 판정 후 [KnowHowStore]에 반영한다.
@@ -139,7 +145,7 @@ class KnowHowConsolidator(
 
         val judgmentPrompt =
             prompt("know-how-consolidate") {
-                system(CONSOLIDATE_SYSTEM_PROMPT)
+                system(CONSOLIDATE_SYSTEM_PROMPT + "\n\n" + verdictConverter.format)
                 user(
                     buildString {
                         appendLine("## New candidate")
@@ -155,25 +161,20 @@ class KnowHowConsolidator(
                 )
             }
 
-        val result =
-            promptExecutor.executeStructured<ConsolidationVerdict>(
-                prompt = judgmentPrompt,
-                model = model,
-                fixingParser = StructureFixingParser(model = model, retries = STRUCTURE_FIX_RETRIES),
-            )
-
-        val structuredResponse = result.getOrElse { error ->
-            log.warn("ADD/UPDATE/SKIP 판정 파싱 실패: {} — SKIP으로 기본 처리(중복 폭주 방지)", error.message)
-            return ConsolidationVerdict(action = ConsolidationAction.SKIP)
-        }
-        return structuredResponse.data
+        return runCatching {
+                val responseText =
+                    promptExecutor.execute(judgmentPrompt, model, emptyList()).textContent()
+                verdictConverter.convert(responseText)
+            }
+            .getOrElse { error ->
+                if (error is CancellationException) throw error
+                log.warn("ADD/UPDATE/SKIP 판정 실패: {} — SKIP으로 기본 처리(중복 폭주 방지)", error.message)
+                ConsolidationVerdict(action = ConsolidationAction.SKIP)
+            }
     }
 
     private companion object {
         const val TOP_K_FOR_DEDUP = 3
-
-        /** 구조화 응답 파싱 실패 시 보조 LLM으로 교정을 시도하는 최대 재시도 횟수. */
-        const val STRUCTURE_FIX_RETRIES = 2
 
         val CONSOLIDATE_SYSTEM_PROMPT =
             """

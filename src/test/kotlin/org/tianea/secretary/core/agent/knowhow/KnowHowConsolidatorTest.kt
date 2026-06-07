@@ -9,6 +9,7 @@ import ai.koog.prompt.llm.LLModel
 import ai.koog.prompt.message.Message
 import ai.koog.prompt.message.ResponseMetaInfo
 import ai.koog.prompt.streaming.StreamFrame
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import jakarta.persistence.EntityManager
 import java.time.Instant
 import kotlin.test.Test
@@ -69,6 +70,7 @@ class KnowHowConsolidatorTest {
             mock(KnowHowRepository::class.java),
             mock(EmbeddingModel::class.java),
             mock(EntityManager::class.java),
+            KnowHowProperties(),
         ) {
         var searchResult: List<ScoredKnowHow> = emptyList()
         var savedKnowHow: KnowHow? = null
@@ -125,7 +127,7 @@ class KnowHowConsolidatorTest {
         val store = SpyKnowHowStore()
         store.searchResult = listOf(makeSimilarKnowHow())
 
-        val consolidator = KnowHowConsolidator(executor, model, store)
+        val consolidator = KnowHowConsolidator(executor, model, store, jacksonObjectMapper())
         consolidator.consolidate(listOf(candidate), chatId = 1L, sourceSessionId = "session-1")
 
         val saved = store.savedKnowHow
@@ -145,7 +147,7 @@ class KnowHowConsolidatorTest {
         val store = SpyKnowHowStore()
         store.searchResult = listOf(makeSimilarKnowHow(existingId))
 
-        val consolidator = KnowHowConsolidator(executor, model, store)
+        val consolidator = KnowHowConsolidator(executor, model, store, jacksonObjectMapper())
         consolidator.consolidate(listOf(candidate), chatId = 1L, sourceSessionId = "session-1")
 
         assertEquals(existingId, store.updatedId)
@@ -160,7 +162,7 @@ class KnowHowConsolidatorTest {
         val store = SpyKnowHowStore()
         store.searchResult = listOf(makeSimilarKnowHow())
 
-        val consolidator = KnowHowConsolidator(executor, model, store)
+        val consolidator = KnowHowConsolidator(executor, model, store, jacksonObjectMapper())
         consolidator.consolidate(listOf(candidate), chatId = 1L, sourceSessionId = "session-1")
 
         assertFalse(store.savedKnowHow != null, "save() should not have been called for SKIP")
@@ -173,7 +175,7 @@ class KnowHowConsolidatorTest {
         val store = SpyKnowHowStore()
         store.searchResult = emptyList()
 
-        val consolidator = KnowHowConsolidator(executor, model, store)
+        val consolidator = KnowHowConsolidator(executor, model, store, jacksonObjectMapper())
         consolidator.consolidate(listOf(candidate), chatId = 1L, sourceSessionId = "session-1")
 
         val saved = store.savedKnowHow

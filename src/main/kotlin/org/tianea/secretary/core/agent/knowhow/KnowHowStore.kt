@@ -25,12 +25,14 @@ import org.springframework.transaction.annotation.Transactional
  * @param repository `know_how` 테이블 JPA 저장소.
  * @param embeddingModel Spring AI 임베딩 모델 빈.
  * @param entityManager 스키마 초기화용 네이티브 DDL 실행에 사용.
+ * @param properties 재랭킹 가중치 등 `know-how.*` 설정.
  */
 @Repository
 class KnowHowStore(
     private val repository: KnowHowRepository,
     private val embeddingModel: EmbeddingModel,
     private val entityManager: EntityManager,
+    private val properties: KnowHowProperties,
 ) {
     private val log = LoggerFactory.getLogger(KnowHowStore::class.java)
 
@@ -53,47 +55,46 @@ class KnowHowStore(
     @EventListener(ApplicationReadyEvent::class)
     @Transactional
     fun initSchema() {
-        runCatching {
-                entityManager
-                    .createNativeQuery("CREATE EXTENSION IF NOT EXISTS vector")
-                    .executeUpdate()
-            }
-            .onFailure { error ->
-                log.warn("vector extension 자동 설치 실패 — DBA가 사전 설치한 상태인지 확인 필요: {}", error.message)
-            }
-        entityManager
-            .createNativeQuery(
-                """
-                CREATE TABLE IF NOT EXISTS know_how (
-                    id                text PRIMARY KEY,
-                    chat_id           bigint         NOT NULL,
-                    intent            text           NOT NULL,
-                    body              text           NOT NULL,
-                    embedding         vector(${KnowHowEntity.EMBEDDING_DIMENSIONS})   NOT NULL,
-                    importance        double precision NOT NULL DEFAULT 0.5,
-                    use_count         int            NOT NULL DEFAULT 0,
-                    created_at        timestamptz    NOT NULL,
-                    updated_at        timestamptz    NOT NULL,
-                    last_used_at      timestamptz,
-                    source_session_id text           NOT NULL
+        entityManager.apply {
+            runCatching {
+                    createNativeQuery("CREATE EXTENSION IF NOT EXISTS vector").executeUpdate()
+                }
+                .onFailure { error ->
+                    log.warn(
+                        "vector extension 자동 설치 실패 — DBA가 사전 설치한 상태인지 확인 필요: {}",
+                        error.message,
+                    )
+                }
+            createNativeQuery(
+                    """
+                    CREATE TABLE IF NOT EXISTS know_how (
+                        id                text PRIMARY KEY,
+                        chat_id           bigint         NOT NULL,
+                        intent            text           NOT NULL,
+                        body              text           NOT NULL,
+                        embedding         vector(${KnowHowEntity.EMBEDDING_DIMENSIONS})   NOT NULL,
+                        importance        double precision NOT NULL DEFAULT 0.5,
+                        use_count         int            NOT NULL DEFAULT 0,
+                        created_at        timestamptz    NOT NULL,
+                        updated_at        timestamptz    NOT NULL,
+                        last_used_at      timestamptz,
+                        source_session_id text           NOT NULL
+                    )
+                    """
+                        .trimIndent()
                 )
-                """
-                    .trimIndent()
-            )
-            .executeUpdate()
-        entityManager
-            .createNativeQuery(
-                "ALTER TABLE know_how ADD COLUMN IF NOT EXISTS updated_at timestamptz"
-            )
-            .executeUpdate()
-        entityManager
-            .createNativeQuery(
-                "UPDATE know_how SET updated_at = created_at WHERE updated_at IS NULL"
-            )
-            .executeUpdate()
-        entityManager
-            .createNativeQuery("ALTER TABLE know_how ALTER COLUMN updated_at SET NOT NULL")
-            .executeUpdate()
+                .executeUpdate()
+            createNativeQuery(
+                    "ALTER TABLE know_how ADD COLUMN IF NOT EXISTS updated_at timestamptz"
+                )
+                .executeUpdate()
+            createNativeQuery(
+                    "UPDATE know_how SET updated_at = created_at WHERE updated_at IS NULL"
+                )
+                .executeUpdate()
+            createNativeQuery("ALTER TABLE know_how ALTER COLUMN updated_at SET NOT NULL")
+                .executeUpdate()
+        }
     }
 
     /**
@@ -129,29 +130,16 @@ class KnowHowStore(
         embeddingText: String = intent,
     ) {
         val existing = repository.findById(id).orElse(null) ?: return
-        existing.intent = intent
-        existing.body = body
-        existing.importance = importance
-        existing.embedding = embeddingModel.embed(embeddingText)
-        existing.updatedAt = Instant.now()
-        repository.save(existing)
+        existing
+            .apply {
+                this.intent = intent
+                this.body = body
+                this.importance = importance
+                embedding = embeddingModel.embed(embeddingText)
+                updatedAt = Instant.now()
+            }
+            .also(repository::save)
     }
-
-    /**
-     * 노하우를 삭제한다.
-     *
-     * @param id 삭제할 노하우 id.
-     */
-    fun delete(id: String) {
-        repository.deleteById(id)
-    }
-
-    /**
-     * id로 단건 조회한다.
-     *
-     * @return 존재하지 않으면 null.
-     */
-    fun findById(id: String): KnowHow? = repository.findById(id).orElse(null)?.toDomain()
 
     /**
      * [chatId] 사용자의 노하우를 쿼리 텍스트와의 코사인 유사도 기준으로 검색한다.
@@ -200,29 +188,43 @@ class KnowHowStore(
     }
 
     /**
-     * Generative Agents 방식으로 재랭킹한다.
+     * 4개 요소의 **가중합(weighted sum)** 으로 재랭킹한다 (Generative Agents, Park et al. 2023 §4.2의 가중합 방식).
      *
-     * `score = recency × importance × similarity`
+     * `score = w_sim·similarity + w_rec·recency + w_imp·importance + w_freq·frequency`
      *
-     * - recency: [lastUsedAt] 기준 지수감쇠. `exp(-λ × hours_since_last_used)`. [lastUsedAt]이 null이면
-     *   [createdAt] 기준. λ = `ln(2) / halfLifeHours`.
-     * - importance: [KnowHow.importance] (0.0~1.0).
-     * - similarity: [ScoredKnowHow.similarity] (0.0~1.0).
+     * 요소는 **결정성**으로 나뉜다:
+     * - **비결정적 가중치(모델 판단)**: importance = [KnowHow.importance] (0.0~1.0). LLM이 매긴 재사용 가치라 같은 입력에도
+     *   실행마다 흔들릴 수 있다.
+     * - **결정적 가중치(사용 통계)**: 저장 상태와 시계의 순수 함수라 항상 재현 가능하다.
+     *     - recency: [lastUsedAt](없으면 [createdAt]) 기준 지수감쇠 `exp(-λ × hours_since)`, λ = `ln(2) /
+     *       halfLifeHours`.
+     *     - frequency: [KnowHow.useCount]를 `useCount / (useCount + frequencySaturationK)`로 [0,1) 포화
+     *       정규화.
+     * - similarity = [ScoredKnowHow.similarity] (0.0~1.0)는 검색 단계 신호 — AI 임베딩 산출이지만 결정적이다.
+     *
+     * 가중치·반감기·포화상수는 모두 `know-how.rerank.*`([KnowHowProperties.Rerank])에서 설정한다. 가중합은 **보상적**이라 한 요소가
+     * 낮아도 다른 요소가 메울 수 있다(곱셈과 달리 similarity≈0이어도 자동 배제되지 않음 — relevance를 게이트처럼 강하게 두려면
+     * `weight-similarity`를 높인다).
      *
      * @param candidates 재랭킹할 후보 목록.
-     * @param halfLifeHours recency 반감기(시간). 기본 72시간(3일).
      * @return [ScoredKnowHow.rerankScore] 내림차순으로 정렬된 새 리스트.
      */
-    fun rerank(candidates: List<ScoredKnowHow>, halfLifeHours: Double = 72.0): List<ScoredKnowHow> {
+    fun rerank(candidates: List<ScoredKnowHow>): List<ScoredKnowHow> {
+        val rerank = properties.rerank
         val now = Instant.now()
-        val lambda = ln(2.0) / halfLifeHours
+        val lambda = ln(2.0) / rerank.halfLifeHours
         return candidates
             .map { scored ->
                 val kh = scored.knowHow
                 val referenceTime = kh.lastUsedAt ?: kh.createdAt
                 val hoursSince = (now.epochSecond - referenceTime.epochSecond) / 3600.0
                 val recency = exp(-lambda * hoursSince)
-                val score = recency * kh.importance * scored.similarity
+                val frequency = kh.useCount / (kh.useCount + rerank.frequencySaturationK)
+                val score =
+                    rerank.weightSimilarity * scored.similarity +
+                        rerank.weightRecency * recency +
+                        rerank.weightImportance * kh.importance +
+                        rerank.weightFrequency * frequency
                 scored.copy(rerankScore = score)
             }
             .sortedByDescending { it.rerankScore }

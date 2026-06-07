@@ -133,7 +133,7 @@ FWT = (1/(T−1)) · Σ_{i=2..T} ( R_{i−1,i} − b̄_i )            # 양수�
 
 ## 5. 노하우 능동 최적화 효용 (프로젝트 고유 축)
 
-> 사용자 요구: "노하우가 축적되고, **사용 횟수·경과 시간을 바탕으로 능동적 최적화**가 가능한 여지." 이 repo는 이미 `know_how`에 `use_count`·`last_used_at`을 두고 `score = recency × importance × similarity`로 재랭킹한다(Generative Agents 방식, [docs/know-how-memory.md](./know-how-memory.md)). 이를 **평가 가능한 지표**로 만든다.
+> 사용자 요구: "노하우가 축적되고, **사용 횟수·경과 시간을 바탕으로 능동적 최적화**가 가능한 여지." 이 repo는 이미 `know_how`에 `use_count`·`last_used_at`을 두고 `score = w_sim·similarity + w_rec·recency + w_imp·importance + w_freq·frequency` **가중합**으로 재랭킹한다(Generative Agents §4.2 방식, `frequency`는 `use_count` 포화 정규화, [docs/know-how-memory.md](./know-how-memory.md)). 이를 **평가 가능한 지표**로 만든다.
 
 직접 대응하는 단일 논문은 없으나, ExpeL의 insight 관리(UPVOTE/DOWNVOTE)와 Generative Agents 재랭킹이 근거다. 핵심은 **"자주·최근 쓰이는 노하우가 실제로 정답에 기여하는가"**를 ablation으로 검증하는 것.
 

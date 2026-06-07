@@ -7,11 +7,13 @@ import ai.koog.prompt.llm.LLMCapability
 import ai.koog.prompt.llm.LLMProvider
 import ai.koog.prompt.llm.LLModel
 import ai.koog.spring.ai.vectorstore.KoogVectorStore
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.tianea.secretary.core.agent.AssistantAgentFactory
 import org.tianea.secretary.core.agent.knowhow.KnowHowConsolidator
+import org.tianea.secretary.core.agent.knowhow.KnowHowProperties
 import org.tianea.secretary.core.agent.knowhow.KnowHowReflector
 import org.tianea.secretary.core.agent.knowhow.KnowHowStore
 import org.tianea.secretary.telegram.TelegramReactionSender
@@ -20,20 +22,22 @@ import org.tianea.secretary.telegram.TelegramReactionSender
 class AgentConfig {
     @Bean
     fun llmModel(
-        @Value("\${spring.ai.model.chat}") chatProvider: String,
-        @Value("\${spring.ai.ollama.chat.options.model:}") ollamaChatModel: String,
+        @Value($$"${spring.ai.model.chat}") chatProvider: String,
+        @Value($$"${spring.ai.ollama.chat.options.model:}") ollamaChatModel: String,
     ): LLModel = resolveLlmModel(chatProvider, ollamaChatModel)
 
     @Bean
     fun knowHowReflector(
         promptExecutor: PromptExecutor,
         llmModel: LLModel,
-        @Value("\${know-how.reflection.min-importance}") minImportance: Double,
+        knowHowProperties: KnowHowProperties,
+        objectMapper: ObjectMapper,
     ): KnowHowReflector =
         KnowHowReflector(
             promptExecutor = promptExecutor,
             model = llmModel,
-            minImportance = minImportance,
+            minImportance = knowHowProperties.reflection.minImportance,
+            objectMapper = objectMapper,
         )
 
     @Bean
@@ -41,8 +45,14 @@ class AgentConfig {
         promptExecutor: PromptExecutor,
         llmModel: LLModel,
         store: KnowHowStore,
+        objectMapper: ObjectMapper,
     ): KnowHowConsolidator =
-        KnowHowConsolidator(promptExecutor = promptExecutor, model = llmModel, store = store)
+        KnowHowConsolidator(
+            promptExecutor = promptExecutor,
+            model = llmModel,
+            store = store,
+            objectMapper = objectMapper,
+        )
 
     @Bean
     fun assistantAgentFactory(

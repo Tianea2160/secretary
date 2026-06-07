@@ -73,6 +73,13 @@ know-how:
     token-budget: 1200
   reflection:
     min-importance: 0.5
+  rerank:
+    weight-similarity: 0.25
+    weight-recency: 0.25
+    weight-importance: 0.25
+    weight-frequency: 0.25
+    frequency-saturation-k: 5.0
+    half-life-hours: 72.0
 telegram:
   bot-token: ${TELEGRAM_BOT_TOKEN:}
   allowed-chat-ids: ${TELEGRAM_ALLOWED_CHAT_IDS:}

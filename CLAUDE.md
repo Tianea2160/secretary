@@ -29,9 +29,10 @@ JDK 25 toolchain이 필수 (`.java-version`, `build.gradle.kts`). Gradle wrapper
 
 ## Code Conventions
 
-- Kotlin 컴파일러 옵션: `-Xjsr305=strict`, `-Xannotation-default-target=param-property`
+- Kotlin 컴파일러 옵션: `-Xjsr305=strict` + `allWarningsAsErrors=true`
   - JSR305 nullability 어노테이션이 strict로 처리됨 → 외부 Java API의 `@Nullable`/`@NonNull`을 무시하면 컴파일 에러
-  - `param-property` 모드 → 생성자 파라미터의 어노테이션이 자동으로 property에 함께 적용됨
+  - 생성자 파라미터 어노테이션의 param-property 타깃팅은 Kotlin 2.4 기본값이라 명시 플래그(`-Xannotation-default-target`)는 제거됨
+  - `allWarningsAsErrors` → 미사용 private 멤버 등 컴파일러 경고가 빌드를 실패시킨다(컴파일 시점에 죽은 코드 차단). 단 public 멤버 미사용은 컴파일러가 감지하지 못함
 - 의존성 BOM: `spring-ai-bom:1.1.6`, `kotlinx-coroutines-bom:1.11.0-rc02` — Spring AI / Coroutines 모듈 버전을 직접 지정하지 말 것
 - 버전 카탈로그(`gradle/libs.versions.toml`)에 일부만 등록되어 있음. 새 의존성 추가 시 카탈로그를 우선 확장하는 방향이 컨벤션이지만 강제되지는 않는다.
 

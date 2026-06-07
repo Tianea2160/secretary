@@ -62,8 +62,18 @@ raw 메시지 `vector_store`와 **별개 테이블**로 분리된다 — 노하�
 ### retrieveKnowHow 노드
 
 1. 사용자 입력 텍스트를 임베딩해 `know_how`에서 코사인 유사도 top-k 검색.
-2. Generative Agents 방식으로 재랭킹: `score = recency × importance × similarity`.
-   - recency: `lastUsedAt`(없으면 `createdAt`) 기준 지수 감쇠 (`halfLifeHours = 72`).
+2. **4요소 가중합으로 재랭킹** (Generative Agents Park et al. 2023 §4.2의 가중합 방식):
+   `score = w_sim·similarity + w_rec·recency + w_imp·importance + w_freq·frequency` (기본 가중치 각 0.25, 합 1.0).
+   가중치는 결정성으로 나뉜다:
+   - **비결정적 가중치(모델 판단)**: `importance` — LLM이 매긴 재사용 가치(0~1). 같은 입력에도 실행마다 흔들릴 수 있다.
+   - **결정적 가중치(사용 통계)**: 저장 상태·시계의 순수 함수라 재현 가능.
+     - `recency`: `lastUsedAt`(없으면 `createdAt`) 기준 지수 감쇠 (`halfLifeHours = 72`).
+     - `frequency`: `useCount / (useCount + 5)`로 [0,1) 포화 정규화.
+   - `similarity`(질의 적합도)는 AI 임베딩 산출이지만 결정적.
+
+   가중합은 **보상적**이라 한 요소가 낮아도 다른 요소가 메울 수 있다(곱셈과 달리 `similarity≈0`이어도 자동 배제되지 않음 —
+   relevance를 게이트처럼 강하게 두려면 `weight-similarity`를 높인다). 가중치·반감기·포화상수는 모두 `know-how.rerank.*`
+   (`KnowHowProperties.Rerank`)에서 설정한다. `use_count`는 이전엔 랭킹에 미반영이었으나 이제 `frequency` 항으로 직접 기여한다.
 3. **토큰 예산** 이내의 상위 후보만 채택 (`token-budget: 1200`, body 글자 수 / 4 근사).
 4. 채택된 노하우를 `"## 관련 노하우"` 마크다운 블록으로 user 메시지에 prepend.
 5. `callLLM` 완료 후 `rewritePrompt`로 user 메시지를 원본 입력으로 되돌려 **ChatMemory에 노하우가 영속되지 않게** 한다.
@@ -90,7 +100,7 @@ raw 메시지 `vector_store`와 **별개 테이블**로 분리된다 — 노하�
 
 ## 설정
 
-`application.yaml`:
+모든 키는 `@ConfigurationProperties(prefix = "know-how")` [`KnowHowProperties`]로 바인딩된다. `application.yaml`:
 
 ```yaml
 know-how:
@@ -100,6 +110,13 @@ know-how:
     token-budget: 1200                   # 주입 노하우 합산 근사 토큰 상한
   reflection:
     min-importance: 0.5                  # 이 미만 후보는 저장 안 함
+  rerank:                                # 재랭킹 가중합 가중치 (합 1.0 권장)
+    weight-similarity: 0.25              # 질의 적합도(검색) — AI 임베딩, 결정적
+    weight-recency: 0.25                 # 최근 사용(시간 감쇠) — 결정적
+    weight-importance: 0.25              # LLM 재사용 가치 — 비결정적(모델 판단)
+    weight-frequency: 0.25               # 사용 빈도(use_count) — 결정적
+    frequency-saturation-k: 5.0          # useCount/(useCount+K), K에서 0.5
+    half-life-hours: 72.0                # recency 지수 감쇠 반감기
 ```
 
 ## 알려진 제약
@@ -129,7 +146,7 @@ latency가 문제가 되면 `docs/koog-strategy-graph.md` §2의 "응답 선전�
 ## 출처
 
 - [Voyager (skill library)](https://arxiv.org/abs/2305.16291) — 노하우를 코드 스킬로 축적하는 방식의 영감.
-- [Generative Agents (reflection)](https://arxiv.org/abs/2304.03442) — recency × importance × relevance 재랭킹 방식.
+- [Generative Agents (reflection)](https://arxiv.org/abs/2304.03442) — recency·importance·relevance **가중합** 재랭킹 방식(§4.2, 곱셈 아님).
 - [Reflexion (verbal lesson)](https://arxiv.org/abs/2303.11366) — 실패 경험에서 교훈을 언어로 추출하는 루프.
 - [Mem0 (ADD/UPDATE/DELETE/NOOP)](https://github.com/mem0ai/mem0) — 중복 판정 방식.
 - [LangMem (memory 분류)](https://langchain-ai.github.io/langmem/) — semantic/episodic/procedural 분류 체계.

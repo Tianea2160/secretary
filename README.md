@@ -29,6 +29,27 @@ docker compose up -d                    # Postgres + Langfuse 스택 기동
 
 전체 변수·튜닝 옵션은 [docs/configuration.md](./docs/configuration.md).
 
+## 노하우 우선순위 (가중치)
+
+노하우를 프롬프트에 주입할 때, 4개 요소의 **가중합**으로 점수를 매겨 상위 후보를 고른다:
+
+```
+score = w_sim·similarity + w_rec·recency + w_imp·importance + w_freq·frequency
+```
+
+가중치는 요소의 **결정성**으로 나뉜다:
+
+| 요소 | 의미 | 분류 |
+|---|---|---|
+| `similarity` | 질의 적합도(임베딩 코사인) | 결정적 (AI 임베딩이지만 재현 가능) |
+| `recency` | 최근 사용 시각 기준 지수 감쇠 | **결정적** (사용 통계) |
+| `frequency` | 사용 횟수(`use_count`) 포화 정규화 | **결정적** (사용 통계) |
+| `importance` | LLM이 매긴 재사용 가치 | **비결정적** (모델 판단, 실행마다 흔들릴 수 있음) |
+
+- `use_count`가 많을수록 `frequency`가 커져 상위로 올라가고, 마지막 사용이 오래될수록 `recency`가 감쇠해 내려간다.
+- 모든 가중치·반감기·포화상수는 `application.yaml`의 `know-how.rerank.*`에서 튜닝한다(기본 가중치 각 0.25). relevance를 게이트처럼 강하게 두려면 `weight-similarity`를 높인다.
+- 상세: [docs/know-how-memory.md](./docs/know-how-memory.md).
+
 ## 문서
 
 - 전체 시스템 흐름 → [docs/architecture.md](./docs/architecture.md)
