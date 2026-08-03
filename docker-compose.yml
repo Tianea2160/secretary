@@ -68,7 +68,7 @@ services:
       REDIS_TLS_ENABLED: "false"
 
   langfuse-web:
-    image: docker.io/langfuse/langfuse:3.178
+    image: docker.io/langfuse/langfuse:3.225
     container_name: secretary-langfuse-web
     restart: always
     depends_on: *langfuse-depends-on
