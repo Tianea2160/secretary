@@ -8,7 +8,7 @@ koog-beta = "1.0.0-beta"
 telegrambots = "10.0.0"
 hypersistence-tsid = "2.1.4"
 ktfmt = "0.26.0"
-commonmark = "0.28.0"
+commonmark = "0.30.0"
 kotlinx-serialization = "1.11.0"
 hibernate = "6.6.52.Final"
 
